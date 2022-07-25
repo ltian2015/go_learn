@@ -17,35 +17,67 @@ import (
 )
 
 /**
-
-defer关键字是在函数中推迟被调用的下级函数的执行机制。
+defer关键字是推迟函数执行程序流程执行机制。
 defer机制与go routine可以看作go语言程序中一种特殊的控制流(control flow)。
+defer语句的语法是： defer 函数调用表达式。
+在计算机语言中，函数调用其实是一种表达式，与其他的表达式一样可以被求值，
+”函数调用表达式“的求值就是执行函数，得到返回结果。
+下面就是常见的defer 语句:
+		defer  myFn(i)
+		defer myFn(otherFunc(i))
+		defer  obj.MemberFn（i）
+		defer obj.MemberFn(i*2)
+		defer obj.MemberFn(otherFn(i))
+一个完整GO函数生命周期包括正常执行与退出两个阶段，只有当两个阶段都执行完毕，函数才会返回到上级函数。
+函数的退出阶段会由return语句或抛出panic语句或runtime.Goexit函数的调用所引发。
+defer语句的语义是：在外层函数正常阶段执行defer语句，而在外层函数的退出阶段执行”函数调用表达式“，
+外层函数执行defer语句的主要操作是把 “函数调用表达式”压入defer-call堆栈之中，
+在外层函数的退出阶段，如果defer-call堆栈为空，就什么都不做，外层函数会返回到上级函数。
+否则就会按照先进后出的顺序，逐个弹出”函数调用表达式“，予以执行。
 
-完整GO函数生命周期包括正常执行与退出两个阶段，只有当两个阶段都执行完毕，函数才会返回到上级函数。
-函数的退出阶段从函数执行return语句或抛出panic或调用runtime.Goexit引发，这个阶段主要执行压入defer-call堆栈中的函数。
+即使”函数调用表达式“执行时发生了panic，即使没有被”发生panic的函数“所recover，也不会影响外层的对
+后续defer-call堆栈中的”函数表达式“的执行，因为，外层函数已经进入了退出阶段。 Go的panic机制下，
+一个函数最多只能关联一个panic相关联，这种情况下，外部函数只能关联到最后发生的panic。
 
-如果defer-call堆栈为空，就什么都不做，函数就会返回到上级函数。
-defer-call堆栈中的函数就是在函数中，使用defer关键字来调用的函数。
-当遇到defer 函数调用时，go运行时并不会立即调用该函数，而是把该函数及调用该函数的参数都压入
-defer-call堆栈中，在函数进入退出 阶段时，按照后进先出的顺序执行难。
-因此，defer 函数调用有以下三个特点：
-1. defer调用函数时的所有涉及被推迟函数调用的变量（包括被推迟函数变量、函数输入参数、函数接收者参数）的值会被先求值，然后作为函数调用现场参数
-一同压入defer-call堆栈中。这些变量值的后续变化对defer调用时的现场参数值没有影响。
+切记的一点就是，defer-call堆栈中存储的是“函数调用表达式”。
 
-2.若推迟执行的是闭包函数，若闭包函数中捕获了外层函数的变量，由于被捕获的变量在闭包函数执行时才会求值，
-因此，被推迟的闭包函数中所捕获的外层函数变量的值可能与该变量在外层主函数推迟闭包函数时的现场值不一样（后续发生了变化）。
+总之，当外层函数执行遇到defer “函数调用表示式” 语句时，go运行时并不会立即执行”函数调用表达式“，
+而是把”函数调用表达式“所涉及的函数指针及调用该函数的参数都求值后压入defer-call堆栈中，
+在函数进入退出阶段时，按照后进先出的顺序执行每个”函数调用表达式“。
 
-3.defer函数调用能够改变主函数的返回结果。因为defer 函数执行发生在主函数的退出阶段，这意味着主函数
-仍在其生命周期之中，主函数的返回结果如果被命名，那么这个命名的返回结果就是主函数生命周期中的一个局部
-变量，能够在主函数的退出阶段被defer函数所改变。
+因此，defer 函数调用有以下6个特点：
+1. defer语句执行时，“函数调用表达式”中涉及的变量，包括被推迟的函数自身的函数指针、函数输入参数、函数接收者参数
+会在defer语句执行时求值，然后形成完整的可调用的”函数调用表达式“压入defer-call堆栈中。
+（1）”函数调用表达式“中所出现的变量值的后续变化对defer调用时的现场参数值没有影响。
+（2）”函数调用表达式“中如果有变量计算表达式或另外另一个函数调用表达式作为被推迟调用的函数的参数，
+    在defer语句被执行时，变量计算表达式会被立即求值，而另外的”函数调用表达式“也会被立执行，也就是说，会
+	立即调用了另外的一个函数表达式，被把该函数的执行结果作为被推迟的函数调用表达式中的组成部分而被一同压栈，
+	以便在退出阶段执行被推迟的函数调用。
 
-4.defer函数最终一定会被调用，无论主函数是否抛出了panic。调用的顺序为最先defer的函数最后调用。
-5.defer会抛弃被推迟调用的函数的返回结果，因此，可以被推迟的函数的返回结果一定能够允许被抛弃，
+2.若推迟执行的是闭包函数，若”闭包函数体“的代码中使用了外层函数或其他处定义的外部变量，
+  在defer语句在执行时并不会对其求值。
+  因此，被推迟的闭包函数中所捕获的外部变量在外层函数正常阶段执行defer语句时的值与在被推迟执行”函数调用表示“
+  在退出阶段执行的值可能不一样，这个变量值可能会被外层函数或其他被推迟而先执行的函数所改变。
+  这是容易引入bug的一点，需要谨慎对待。
+
+3.defer函数调用能够改变主函数的返回结果。
+因为defer 函数执行发生在主函数的退出阶段，这意味着主函数
+仍在其生命周期之中，主函数的返回结果如果被命名，而这个命名的返回结果其实只是主函数生命周期中的一个局部
+变量，能够在主函数的退出阶段被defer函数所改变。这种方式需要谨慎对待，否则容易出现Bug。
+
+4.defer函数最终一定会被调用，无论主函数还是其他被defer的函数是否抛出了panic。
+  调用的顺序为最先defer的函数最后调用。
+
+5.有些系统函数不能被defer。
+  被defer的函数在主函数退出阶段被自动调用，因此被defer的函数即使有返回结果也无法被外层函数的逻辑所用。
+  因此，go会抛弃被推迟调用的函数的返回结果，因此，可以被推迟的函数的返回结果一定能够允许被抛弃，
   值得注意的是，系统内置函数(buidin包与unsafe包)中，除了copy与recover函数外，其他系统内置
-  函数如果存在返回值，则不允许被抛弃，因此，这些系统函数不能被defer。
-6.如果被defer的函数值是nil，尽管defer语句执行时不会抛出panic，但是，在退出阶段执行该空函数时会抛出panic。
+  函数如果存在返回值，不允许被抛弃，因此，这些系统函数不能被defer。
 
-defer函数的用途主要有两点：
+6.如果被defer的函数是nil，尽管外层函数在正常执行阶段执行efer语句时不会抛出panic，
+  但是，在外层函数在退出阶段执行该空函数的调用表达式时会抛出panic。
+
+defer函数的用途主要有三点：
 1. defer函数可以用于优雅地释放被主函数所申请的系统资源（比如，file，socket，lock等）。也就是在申请到资源后，立即defer 资源释放函数，
 这样，函数正常执行完毕后，一定会释放资源。此场景下 ，defer相当于Java中的finally，但打开多个资源的时候，
 go defer机制要比使用java finally机制更加优雅。
@@ -58,6 +90,8 @@ go defer机制要比使用java finally机制更加优雅。
   并使线程入口函数进入退出阶段，如果线程入口函数退出阶段没有捕获并recover该panic，就会导致
   该线程因存在panic而崩溃，go运行时就会由于任何一个线程的崩溃，而让整个程序崩溃。
   关于如何抛出panic与恢复panic的机制，详见panic_test.go。
+
+3.利用defer 机制可以进行函数递归嵌套调用时对递归调用进行调用层次的追踪与分析。
 **/
 
 //TestDeferConctextCapture函数展示了推迟函数对推迟现场情况，反映了defer特点中的第1点和第2点。
@@ -88,6 +122,8 @@ func TestDeferConctextCapture(t *testing.T) {
 }
 
 //TestModifyNamedResultByDefer函数展示了defer函数可以对外层函数命名的返回结果进行修改。
+//这种方式要谨慎应用，但是否考虑为返回的抽象类型的结果插入装饰能力，或者无论出现什么
+// 异常情况都让完成函数得到缺省的结果呢？有待于进一步研究。
 func TestModifyNamedResultByDefer(t *testing.T) {
 	mainFunc := func(welcomeWord string, name string) (welcomeStatement string) {
 		defer func() {
@@ -183,35 +219,7 @@ func deferCloseMultiFilesInGoodWay(paths []string) error {
 	return nil
 }
 
-//------------------defer 特殊用例1：通过refer机制重启出现panic的goroutine-----------
-//stubbornTaskExcutor函数定义一个了执着的任务执行者，
-//这是一个高阶函数，它会执行传入的工作函数，如果传入工作函数在执行过程中出现了panic，
-//它会重新启动一个goroutine继续运行自身，直至任务完成，所以称之为执着的stubborn）任务执行者。
-//通过本用例的实现机制，我们可以设计一个更加完善的，可以重试一定（配置）次数后再最终报错的类似于akka任务执行框架。
-func stubbornTaskExcutor(taskName string, workFunc func()) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(taskName, " is carshed. restart it now !")
-			//重启线程以为着每panic一次，就会在当前goroutine下重新启动一个新goroutine。
-			//其实，也可以不用重启那么多线程，即：去掉go关键字。
-			go stubbornTaskExcutor(taskName, workFunc)
-		}
-	}()
-	workFunc()
-}
-
-//	businessWorkFunc 是一个具体的业务处理函数。
-func businessWorkFunc() {
-	//模拟一个工作负载
-	//simulate a workload
-	fmt.Println("workd begin")
-	time.Sleep(time.Second)
-	//模拟一个非业务处理逻辑范围内的意外问题的发生
-	if time.Now().UnixNano()&0x3 == 0 {
-		panic("unexcepeted situation!")
-	}
-	fmt.Println("workd end")
-}
+//------------------defer 特殊用例1：通过refer机制配合高阶函数重启出现panic的goroutine-----------
 func TestRestartPanicGoroutine(t *testing.T) {
 
 	go stubbornTaskExcutor("task1", businessWorkFunc)
@@ -220,11 +228,42 @@ func TestRestartPanicGoroutine(t *testing.T) {
 
 }
 
-//------------------defer 特殊用例2：通过refer与panic实现跨多层函数嵌套调用的转移跳转-----------
-//首先，必须强调的是，这是一种不易读的风格，只有极特殊的场景可以使用。
+//stubbornTaskExcutor函数定义一个了执着的任务执行者，
+//这是一个高阶函数，它会执行传入的工作函数，如果传入工作函数在执行过程中出现了panic，
+//它会重新启动一个goroutine继续运行自身，直至任务完成，所以称之为执着的stubborn任务执行者。
+//通过本用例的实现机制，我们可以设计一个更加完善的，可以重试一定（配置）次数后再最终报错的类似于akka任务执行框架。
+func stubbornTaskExcutor(taskName string, workFunc func()) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(taskName, " is carshed. restart it now !")
+			//重启线程意味着每panic一次，就会在当前goroutine下重新启动一个新goroutine。
+			//其实，也可以不用重启那么多协程，即：去掉go关键字。
+			go stubbornTaskExcutor(taskName, workFunc)
+		}
+	}()
+	workFunc()
+}
+
+//	businessWorkFunc函数模拟一个具体的业务处理函数。
+func businessWorkFunc() {
+	//模拟一个工作负载
+	fmt.Println("workd begin")
+	time.Sleep(time.Second)
+	//模拟一个随机的非业务处理逻辑范围内的意外问题的发生
+	if time.Now().UnixNano()&0x3 == 0 {
+		panic("unexcepeted situation occur!")
+	}
+	fmt.Println("workd end")
+}
+
+//
+
+//------------------defer 特殊用例2：通过refer与panic机制的配合实现跨多层函数嵌套调用的转移跳转-----------
+//必须强调的是，这是一种不易读的风格，只有极特殊的场景可以使用。慎用！
 func TestRemoteJump(t *testing.T) {
 
 	n := func() (result int) {
+		//恢复错误
 		defer func() {
 			//通过defer/recover 机制获得n层函数调用直接抛出的结果。
 			if r := recover(); r != nil {
@@ -233,7 +272,8 @@ func TestRemoteJump(t *testing.T) {
 				}
 			}
 		}()
-		//嵌套调用
+
+		//多层嵌套调用，会有一层调用中产生panic
 		func() {
 			//嵌套调用
 			func() {
@@ -250,12 +290,15 @@ func TestRemoteJump(t *testing.T) {
 		}()
 		return
 	}()
+
 	fmt.Println("n=", n)
 }
 
-//------------------defer 特殊用例2：通过refer与panic实现更加简洁的错误检查-----------
+//------------------defer 特殊用例3：通过refer与panic实现更加简洁的错误检查-----------
 //对于一个顺序执行多个操作操作步骤的程序，每一个操作步骤都存在三种情况：
-//1：出现错误，不能继续。2。没有错误，但是逻辑决定不能继续。3.继续执行。
+//1.出现错误，不能继续。
+//2.没有错误，但是逻辑决定不能继续。
+//3.继续执行。
 //如果采用常规方式定义执行步骤，则执行步骤的定义为：
 //  func stepN()(continue bool,err error)
 //执行步骤的主程序必须判断两个返回结果，这样主程序就比较啰嗦.
@@ -287,4 +330,35 @@ func TestSimplifyErrorCheck(t *testing.T) {
 	simulateStep(4, false, true) //模拟没有错误，继续执行
 	simulateStep(5, true, false) // 模拟发生错误，肯定不能继续执行的步骤，第二个参数被忽略。
 	simulateStep(6, false, true) //得不到执行了
+}
+
+//------------------defer 特殊用例4：利用Defer机制实现嵌套函数的调用追踪-----------
+func TestTracing(t *testing.T) {
+	tracer := NewTracer("")
+	childFn := func() {
+		//注意，tracer.Trace("childFn")会在childFn函数正常执行阶段被执行求值，其执行结果作为
+		//tracer.Untrace调用表达式的参数在childFn函数的退出阶段执行。
+		//在childFn函数退出所执行的函数调用表达式形如：tracer.Untrace(”tracer.Trace执行结果")
+		defer tracer.Untrace(tracer.Trace("childFn"))
+	}
+	parentFn := func() {
+		//注意，tracer.Trace("childFn")会在parentFn函数正常执行阶段被执行求值，其执行结果作为
+		//tracer.Untrace调用表达式的参数在parentFn函数的退出阶段执行。
+		//在childFn函数退出所执行的函数调用表达式形如：tracer.Untrace(”tracer.Trace执行结果")
+		defer tracer.Untrace(tracer.Trace("parentFn"))
+		childFn()
+	}
+	//注意，tracer.Trace("childFn")会在TestTracing函数正常执行阶段被执行求值，其执行结果作为
+	//tracer.Untrace调用表达式的参数在TestTracing函数的退出阶段执行。
+	//在childFn函数退出所执行的函数调用表达式形如：tracer.Untrace(”tracer.Trace执行结果")
+	defer tracer.Untrace(tracer.Trace("TestTracing"))
+	parentFn()
+}
+func TestPrinter(t *testing.T) {
+	printer := func(message string) string {
+		println(message)
+		return "END " + message
+	}
+	defer printer(printer("TestPrinter"))
+	println("\thandling in TestPrinter")
 }

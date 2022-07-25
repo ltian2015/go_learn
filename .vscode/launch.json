@@ -1,0 +1,94 @@
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+/**
+       https://github.com/golang/vscode-go/blob/master/docs/debugging.md
+       There are some more properties that you can adjust in the debug configuration:
+
+Property	    Description
+name	        The name for your configuration as it appears in the drop-down in the Run view.
+type	        Always leave this set to "go". VS Code uses this setting to determine which extension should be used for debugging.
+request	        One of launch or attach. Use attach when you want to attach to a running process.
+mode	        For launch requests, one of auto, debug, remote, test, or exec. For attach requests, use local or remote.
+program	        In test or debug mode, this refers to the absolute path to the package or file to debug. In exec mode, this is the existing binary file to debug. Not applicable to attach requests.
+env	            Environment variables to use when debugging. Use the format: { "NAME": "VALUE" }. Not applicable to attach requests.
+envFile	        Absolute path to a file containing environment variable definitions. The environment variables passed in via the env property override the ones in this file.
+args	        Array of command-line arguments to pass to the program being debugged.
+showLog	        If true, Delve logs will be printed in the Debug Console panel. This corresponds to dlv's --log flag.
+logOutput	    Comma-separated list of Delve components (debugger, gdbwire, lldbout, debuglineerr, rpc) that should produce debug output when showLog is true. This corresponds to dlv's --log-output flag.
+buildFlags	    Build flags to pass to the Go compiler. This corresponds to dlv's --build-flags flag.
+dlvFlags	    Extra flags passed to dlv. See dlv help for the full list of supported flags. This is useful when users need to pass less commonly used or new flags such as --only-same-user, --check-go-version. Note that some flags such as --log-output, --log, --init, --api-version already have corresponding properties in the debug configuration, and flags such as --listen and --headless are used internally. If they are specified in dlvFlags, they may be ignored or cause an error.
+remotePath	    If remote debugging (mode: remote), this should be the absolute path to the package being debugged on the remote machine. See the section on Remote Debugging for further details. golang/vscode-go#45 is also relevant. Becomes the first mapping in substitutePath.
+substitutePath	An array of mappings from an absolute local path to an absolute remote path that is used by the debuggee. The debug adapter will replace the local path with the remote path in all of the calls. The mappings are applied in order, and the first matching mapping is used. This can be used to map files that have moved since the program was built, different remote paths, and symlinked files or directories. This is intended to be equivalent to the substitute-path configuration, and will eventually configure substitute-path in Delve directly.
+cwd	            The working directory to be used in running the program. If remote debugging (mode: remote), this should be the absolute path to the working directory being debugged on the local machine. See the section on Remote Debugging for further details. golang/vscode-go#45 is also relevant.
+processId	    This is the process ID of the executable you want to debug. Applicable only when using the attach request in local mode. By setting this to the command name of the process, ${command:pickProcess}, or${command:pickGoProcess} a quick pick menu will show a list of processes to choose from.
+
+Specifying build tags
+If your program contains build tags, you can use the buildFlags property. For example, if you build your code with:
+
+go build -tags=whatever
+Then, set:
+
+"buildFlags": "-tags=whatever"
+in your launch configuration. This property supports multiple tags, which you can set by using single quotes. For example:
+
+"buildFlags": "-tags='first,second,third'"
+Specifying other build flags
+The flags specified in buildFlags and env.GOFLAGS are passed to the Go compiler when building your program for debugging. Delve adds -gcflags='all=-N -l' to the list of build flags to disable optimizations. User specified buildFlags conflict with this setting, so the extension removes them (Issue #117). If you wish to debug a program using custom -gcflags, build the program using go build and launch using exec mode:
+
+{
+    "name": "Launch executable",
+    "type": "go",
+    "request": "launch",
+    "mode": "exec",
+    "program": "/absolute/path/to/executable"
+}
+Note that it is not recommended to debug optimized executables as Delve may not have the information necessary to properly debug your program.
+
+Using VS Code variables
+Any property in the launch configuration that requires a file path can be specified in terms of VS Code variables. Here are some useful ones to know:
+${workspaceFolder}  refers to the root of the workspace opened in VS Code.
+${file}             refers to the currently opened file.
+${fileDirname}      refers to the directory containing the currently opened file. This is typically also the name of the Go package containing this file, and as such, can be used to debug the currently opened package.
+${workspaceRoot}    refers to the root of the workspace opened in VS Code.
+**/
+
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "运行主程序",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}",
+            "showLog": true
+        },
+        {
+            "name": "测试一个测试函数 function",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}",
+            "args": [
+                "-test.run",
+                "MyTestFunction"
+            ]
+        },
+        
+        
+        {
+            "name": "测试当前包",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "remotePath": "",
+            "port": 2345,
+            "host": "127.0.0.1",
+            "program": "${file}",
+            "env": {},
+            "args": [],
+            "showLog": true
+        }
+    ]
+}

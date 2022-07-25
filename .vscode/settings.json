@@ -1,0 +1,39 @@
+{
+    "files.watcherExclude": {
+        "**/target": true
+    },
+    "go.installDependenciesWhenBuilding": true,
+    "go.delveConfig": {
+
+        "dlvLoadConfig": {
+            "followPointers": true,
+            "maxVariableRecurse": 1,
+            "maxStringLen": 64,
+            "maxArrayValues": 64,
+            "maxStructFields": -1,
+            "check-go-version": false
+        },
+        "apiVersion": 2,
+        "showGlobalVariables": false
+    },
+    "todo-tree.highlights.defaultHighlight": {
+        "icon": "alert",
+        "type": "text",
+        "foreground": "#e5ff00",
+        "background": "#002db3",
+        "opacity": 50,
+        "iconColour": "blue"
+    },
+    "todo-tree.highlights.customHighlight": {
+        "TODO": {
+            "icon": "check",
+            "type": "text"
+        },
+        "FIXME": {
+            "foreground": "#ff1a1a",
+            "iconColour": "black",
+            "background": "#002db3",
+            "gutterIcon": true,
+        }
+    }
+}

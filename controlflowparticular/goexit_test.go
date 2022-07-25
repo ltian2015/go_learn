@@ -11,16 +11,31 @@ import (
 )
 
 /**
-     Goeixt与panic都使得函数非正常退出，而且都会向外层函数传播。
-	 Goexit使函数与一个Goexit 信号关联，而且无法向panic那样取消，因此会使得
-	 goroutine的入口函数退出，因此，Goexit是goroutine退出命令。
-	 Goexit调用会导致函数进入退出阶段，引发被推迟执行的函数调用。由于Goexit不是panic，
-     在任何一个被推迟的函数中调用recover都只能得到nil。
+    Goeixt与panic都使得函数非正常退出，而且都会向外层函数传播不同的信号。
+	Goexit使函数与一个Goexit信号关联，而且无法像panic所发出的panic信号那样
+	 可以通过recover机制来消除。因此会使得Goeixts一定会导致goroutine入口函数退出，
+	 所以，Goexit是goroutine退出命令。
+	 且由于二者都是一种非正常的退出机制，在一个Goroutine中，
+	 函数正常执行阶段Goexit与Panic两种退出机制不能连续发生，也不能同时发生。并且，
+	 Goexit调用会导致函数进入退出阶段，从而也引发被推迟执行的函数调用。
+
+	 由于在正常执行阶段的Goexit不是panic，也不能与之并存，所以当GoExit引发函数退出时，
+	 在任何一个被推迟的函数中调用recover都只能得到nil。
+
+	 但通过defer机制，可以使得panic与Goexit一个在正常阶段执行，一个在退出阶段执行，
+	 就会使得二者相继发生。如果不了解其机制就会发生bug。
+	 如果先执行panic（正常执行阶段），后执行Goexit（defer到退出阶段执行），后执行的Goexit会掩盖panic。
+	 如果，先执行Goexit（正常执行阶段），再执行panic（defer到退出阶段执行），先执行的panic就不会被Goexit掩盖了。
+
 	 在一个普通的goroutine中调用Goexit函数会结束该goroutine，但其他goroutine不会受影响.
-	 但是，如果在主 goroutine 由于Goexit导致主线程的提前结束，使得入口main函数没有返回状态结果，
-	 因此程序会崩溃。但是，在调用Goexit结束主goroutine时，其他正在执行子goroutine
-	 不会受影响，仍然会继续执行，直至终结。主goroutine的入口函数会对“go运行时”返回状态码，这是主goroutine的
-	 入口函数main与普通goroutine入口函数的区别。
+	 主goroutine的入口函数（main函数）会对“go运行时”返回状态码，而普通goroutine的入口函数没有返回值。
+	 这是主goroutine的入口函数main与普通goroutine入口函数的区别。
+
+	 但是，如果在主 goroutine（main函数为入口的goroutine）中使用了Goexit，会导致了主线程的提前结束，
+	 由于入口main函数没有返回状态结果，因此，在“go运行时”看来，主routine处于崩溃状态。
+
+	 但要注意的是，在调用Goexit结束主goroutine时，其他正在执行子goroutine
+	 不会受影响，仍然会继续执行，直至终结。
 **/
 func TestGoexitInMainGoroutine(t *testing.T) {
 	//程序入口函数中推迟执行的匿名函数
@@ -71,7 +86,7 @@ func getGoroutineID() uint64 {
 }
 
 //TestGoexitTogetherWithPanic函数测试了Panic与Goexit同时在一个函数中使用的情况，
-//正常情况下，两个并行的机制应该互不干扰，也不会相互掩盖。但是事实是，
+//正常执行阶段，两个并行的机制应该互不干扰，也不会相互掩盖。但是事实是，在退出阶段，
 //如果先执行panic，后执行Goexit，后执行的Goexit会掩盖panic。
 //如果，先执行Goexit，再执行panic，panic就不会被Goexit掩盖了。
 
