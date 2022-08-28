@@ -45,7 +45,7 @@ import (
 	"unsafe"
 )
 
-//测试底层类型相同的不同类型的变量相等性
+// 测试底层类型相同的不同类型的变量相等性
 func UnderlyingTypeEqualityTest() {
 	type MyInt int
 	var mi MyInt = 5
@@ -56,7 +56,7 @@ func UnderlyingTypeEqualityTest() {
 	//	var isEqual bool = (mi == i)
 }
 
-//下面函数测试可比较的struct
+// 下面函数测试可比较的struct
 func ComparableStructEqualityTest() {
 	type ComparableStruct struct {
 		id      int               //可比较类型
@@ -105,9 +105,9 @@ func ComparableStructEqualityTest() {
 	//}
 }
 
-//测试指针变量的相等性
-//无论指针指向的类型是可比较还是不可比较的，所有类型的指针都是可比较的。
-//指针类型相同，且指向同一个内存地址，则二者是相同的指针。值为nil的同类指针都相等
+// 测试指针变量的相等性
+// 无论指针指向的类型是可比较还是不可比较的，所有类型的指针都是可比较的。
+// 指针类型相同，且指向同一个内存地址，则二者是相同的指针。值为nil的同类指针都相等
 // 指向两个不同的 zero-size 变量的指针可能相同，也可能不同。这是GO语言规范中的说，原因大概
 func PointerEqualityTest() {
 	var p1, p2 *string
@@ -124,10 +124,10 @@ func PointerEqualityTest() {
 	//println("*ps1==*ps2 ? ", *ps1 == *ps2)  编译无法通过，因为指针指向的变量类型是不可比较的。
 }
 
-//比较通道类型对象的相等性,通道对象是GO基本的并发原语（ concurrency primitive），判断两个通道对象是否相等是否重要。
-//如果两个通道对象都是nil,或者两个通道对象都是由“同一次make方法调用”所产生的。
-//原理：通道底层实现是用一个包含了阻塞队列的指针字段（Field）来引用阻塞队列的结构体，也就是所为的“引用类型”。
-//所以，该结构体的所有字段（Field）必须相同，那么channel才会相同。
+// 比较通道类型对象的相等性,通道对象是GO基本的并发原语（ concurrency primitive），判断两个通道对象是否相等是否重要。
+// 如果两个通道对象都是nil,或者两个通道对象都是由“同一次make方法调用”所产生的。
+// 原理：通道底层实现是用一个包含了阻塞队列的指针字段（Field）来引用阻塞队列的结构体，也就是所为的“引用类型”。
+// 所以，该结构体的所有字段（Field）必须相同，那么channel才会相同。
 func ChannelEqualityTest() {
 	var ch1, ch2 chan int
 	println("ch1==ch2 ? ", ch1 == ch2) //true,因为ch1和ch2都是nil
@@ -142,7 +142,6 @@ func ChannelEqualityTest() {
 		println("cha==chb ?", cha == *chb)
 	}
 	comp(ch1, &ch2) //true，二者相同，因为背后引用的底层阻塞队列相同
-
 }
 
 // 空对象，或0内存对象的比较。

@@ -6,23 +6,24 @@ import (
 )
 
 /*****************************************************************************
+值的类型转换的本质是希望能够运用另一个类型的方法集中的方法计算（处理）当前的值，也就是对“相同或兼容内存格式与布局”
+切换不同的操作方法集，从而得到希望的结果。因此，一个类型的值如果可以转换另一个类型，那么前提就是目标类型的内存布局
+一定能够兼容变量的内存格式与布局。但是为了防止内存布局兼容的类型之间出现不经意的类型转换，从而导致方法集的
+滥用，GO不允许内存布局兼容的两类型之间进行隐式（直接）的类型转换，必须使用显式（强制）的类型转换，从而提高了类型安全。
+
 1. 值的类型转换语法。
-  1.1 编译器保证的安全类型转换——静态类型转化。 如果一个值v，可以转换为某个类型T，那么转换的语法就是(T)(v). 尤其是，如果T“已定义的类型(defined type)”，
+  1.1 编译器保证的安全类型转换——显式（强制）的静态类型转化。 如果一个值v，可以转换为某个类型T，那么转换的语法就是(T)(v). 尤其是，如果T“已定义的类型(defined type)”，
    那么往往简写为T（v）,称为“简化类型转换写法”。而(T)(v)可以称为“正规类型转换写法”。
    由于存在“简化类型转换写法”，所以， “正规类型转换写法”往往用于将值转换为“未经定义的类型”，
    因为未经定义类型是多个类型组成的复合类型，也就是字面类型，因此被()括起来的阅读效果更好。
    如果一个值x可以被隐式地转换为类型T  ，也就是说值x不需要类型转换语法就能够直接赋值给类型T的变量，
    那么，一定也可以显式地将其转换未类型T的变量。即：如果编译器允许 var t T=x，那么一定允许 var t =T(x)
-  1.2 编译器无法保证安全的类型转换——运行时的动态类型转换。
-      对于任意两个类型T1，T2，可以使用以下语法进行类型转换
-	  var t1 T1
-	  var t2 T2
-	  var ok bool
-	  t2,ok=(interface{})(t1).(T2)
-	 也就是先把值 t1转换为 interface{},，然后再将interface{}转换为T2 。
-	 如果可以转换，则返回t2，ok结果为true，
-	 否则ok为false。t2保持不变。
-
+  1.2 编译器无法完全保证安全的类型转换——运行时显式的动态类型转换——为不确定具体类型的接口值的断定“精准的”具体类型来源。
+         ConcreteTypeValue,boolValue=InterfaceValue.(ConcreteType)
+	  这个语法的语义是在运行期，判断不确定具体类型的接口值InterfaceValue其来源的真实类型是否为指定的
+	  具体类型ConcreteType，如果是，就将该接口值转换为ConcreteType，并返回 (ConcreteTypeValue,true)，
+	  否则返回（零值，false）。
+	  之所以称其为无法完全保证类型安全，是因为必须依靠程序员检查转换结果。
 ******************************************************************************/
 //--------------------------value convertion 语法练习 开始-----------------------//
 type DefinedType struct {
@@ -36,12 +37,14 @@ type Teacher struct {
 
 var data1 = DefinedType{id: "001", name: "xiaofei"}
 
-//将已定义类型 DefinedType的值data1转换为 未定义类型
+// 将已定义类型 DefinedType的值data1转换为 未定义类型
+//
 //	struct {
 //		id   string
 //		name string
 //	}
-//的值，采用“正规类型转换写法(T)(v)”的风格比较好，如下：
+//
+// 的值，采用“正规类型转换写法(T)(v)”的风格比较好，如下：
 var data2 = (struct {
 	id   string
 	name string
@@ -55,7 +58,7 @@ var data3 = struct {
 
 // Teacher是已定义类型，采用简化写法T(v)进行类型转换比较好
 var data4 = Teacher(data1) //T(v)风格
-//不安全的类型转换
+// 不安全的类型转换
 func TestUnsafeTypeConvert(t *testing.T) {
 	type Student struct {
 		id   string
@@ -73,16 +76,12 @@ func TestUnsafeTypeConvert(t *testing.T) {
 
 //--------------------------value convertion 语法练习 结束------------------------//
 /************************************************************************************
-2.值的类型转换规则 ：
-      值的类型转换的本质是希望能够运用另一个类型的方法集中方法计算（处理）当前的值，也就是对“相同或兼容内存格式与布局”
-	  切换不同的操作方法集，从而得到希望的结果。因此，一个类型的值如果可以转换另一个类型，那么前提
-	  就是目标类型的内存布局一定能够兼容变量的内存格式与布局。
-	  因此，值的类型转换的本质是为内存格式或布局相同的数据切换方法集（Method  Set）。
-	  但是为了避免内存布局兼容的变量之间的发生无意地类型转换（隐式转换）而造成的误操作，GO制定了
-	  严格地类型转换规则。
-
-    2.1 同一类型不同类型名称转换。考虑到go语言中可以为通过 type alias=T 来为类型定义别名，这就存在名称不一样但是实际上是同一个类型
-	的情况。因此，如果两个类型本质上是同一种类型，那么可以隐式转换（直接赋值，var t T=x）。
+2.值的类型隐式（直接）转换规则 ：
+	鉴于值的类型转换的本质是为内存格式或布局相同的数据切换方法集（Method  Set）。
+	但是为了避免内存布局兼容的变量之间的发生无意地类型转换（隐式转换）而造成的误操作，GO制定了
+	严格地类型转换规则，只有当同一类型具有不同类型名称是，才允许隐式的转换。
+	这是考虑到go语言中可以为通过 type alias=T 来为类型定义别名，这就存在名称不一样但是实际上
+	是同一个类型的情况。因此，如果两个类型本质上是同一种类型，那么可以隐式转换（直接赋值，var t T=x）。
 
 ***/
 func TestSameTypeConvert(t *testing.T) {
@@ -171,7 +170,7 @@ func TestUnderlyinngTypeSameConvert(t *testing.T) {
 
 }
 
-//-----------指针类型相关的类型转换
+// -----------指针类型相关的类型转换
 func TestUnderlyinngPointerTypeConvert(t *testing.T) {
 	type MyIntType int                           //MyIntType的底层类型是int
 	type YourIntType int                         //YourIntType的底层类型是int
@@ -239,7 +238,7 @@ func TestConstantDeclaration(t *testing.T) {
 	const constRate = bigFloat / 1.2e9999 //constRate=10,两个超界常量的计算，精度更高。
 }
 
-//未定类型常量已定类型在类型转换中的运用。
+// 未定类型常量已定类型在类型转换中的运用。
 func TestConstantTypeConvert(t *testing.T) {
 	const untypedIntconstant = 1       //未定类型常量 (untyped const)，缺省类型为int，所以untypedIntconstant缺省类型是int。
 	const typedInt32Constant int32 = 2 //已定类型常量(typed const)，类型为int32
@@ -260,7 +259,6 @@ func TestConstantTypeConvert(t *testing.T) {
 	fmt.Printf("%b\n", MaxUint) //二进制打印数值
 }
 
-//
 func TestNumbericConvertion(t *testing.T) {
 	//涉及值溢出的转换。
 	{
@@ -296,4 +294,60 @@ func TestNumbericConvertion(t *testing.T) {
 
 }
 
-////////////////////////////////////////////////////////////////
+// ------------------------下面代码是为了测试不确定类型的接口值的来源类型的精准判断-----//
+type MyString string
+
+func (ms MyString) doPrint() { fmt.Println("MyString---" + ms) }
+
+type MyStringStr MyString
+
+func (mss MyStringStr) doPrint() { fmt.Println("MyStringStr---" + mss) }
+
+// func (mss MyStringStr) doNothing() {  }
+type Printable interface {
+	doPrint()
+}
+
+func TestRuntimeTypeConvert(t *testing.T) {
+	var ms MyString = "hello"
+	var s string = "world"
+	var mss MyStringStr = "hello world"
+	// 通过静态的强制转换，把string类型值转      换为Mystring，可行
+	(MyString)(s).doPrint()
+	//通过静态的强制转换，把MyString类型值转换为string，可行
+	var s2 string = (string)(ms)
+	_ = s2
+
+	var ms3 MyString = MyString(mss)
+	_ = ms3
+	var mss2 MyStringStr = MyStringStr(ms)
+	_ = mss2
+	//静态可以强制转换的类型，以动态的方式无法转换。
+	//msx,ok都是if语句内部的局部变量，不在函数体的范围之内。
+	if msx, ok := interface{}(s).(MyString); ok {
+		fmt.Println(msx)
+	} else {
+		fmt.Println("can not convert string to MyString dynamicly")
+	}
+
+	if sx, ok := interface{}(ms).(string); ok {
+		fmt.Println(sx)
+	} else {
+		fmt.Println("can not convert MyString to string dynamicly")
+	}
+	// 不确定的 接口类型的精准类型判断
+	var ptb Printable = ms //接口类型实际来源于MyString
+	if mstr, ok := ptb.(MyString); ok {
+		mstr.doPrint() //具体类型精准匹配，所以本语句可以执行
+	} else {
+		fmt.Println("can not convert Printable to MyString dynamicly")
+	}
+	if mssStr, ok := ptb.(MyStringStr); ok {
+		mssStr.doPrint() //具体类型不匹配，所以本语句无法执行
+	} else {
+
+		fmt.Println("can not convert Printable to MyStringStr dynamicly")
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////

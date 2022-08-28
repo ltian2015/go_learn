@@ -46,22 +46,22 @@ import (
 //------------------值的基本知识练习，开始-----------------------------------------------------//
 //未定类型常量、字面量的定义与使用
 const MAX_AGE = 300 //未定类型常量300,也就是动态的整数类型的常量，该常量占用2个字节空间，可以赋值给任意内存空间兼容的整数类型。
-//var m int8 = MAX_AGE // 编译错误，类型的内存空间不兼容，int8变量只有一个字节，无法容纳两个字节常量值。
+// var m int8 = MAX_AGE // 编译错误，类型的内存空间不兼容，int8变量只有一个字节，无法容纳两个字节常量值。
 var n int16 = MAX_AGE //
 var o int32 = MAX_AGE
 var p int64 = MAX_AGE
 
 //var pi *int = &MAX_AGE //常量不支持取地址操作。
 
-//var pi *int64 = &(p - int64(0)) //除了变量意外的表达式不能取地址
+// var pi *int64 = &(p - int64(0)) //除了变量意外的表达式不能取地址
 var INT_AGE = 15 //尽管INT_AGE没有显式地指定类型，但是变量类型是int，因为 未定类型字面量15的缺省类型是int
-//var i int64 = INT_AGE //编译错误，类型不匹配，未经转换不能直接赋值。
+// var i int64 = INT_AGE //编译错误，类型不匹配，未经转换不能直接赋值。
 var j int = INT_AGE
 
 const MAX_SPACE = 65535 //占满了两个字节的未定类型常量。
 //var oo int16 = MAX_SPACE + MAX_AGE //编译错误，常量表达式在编译期已求值，结果占用空间大于2个字节。
 
-//打印出各种未定类型常量的缺省类型。
+// 打印出各种未定类型常量的缺省类型。
 func TestUntypedConstantDefaultType(t *testing.T) {
 	fmt.Printf("default type of constant %v is %T\n", "hello", "hello") // int类型
 	fmt.Printf("default type of constant %v is %T\n", 0, 0)             // int类型
@@ -108,12 +108,12 @@ const STUDENT1 StudentType = StudentType{
 //非基本类型或非以基本为源的定义化类型无法定义常量，所以上面的STUDENT1不能定义为常量，只能定义为如下的变量。
 var STUDENT1 = StudentType{id: "001", name: "liufei"}
 
-//下面的EOF变量模仿了io包中的io.EOF变量。EOF本应是常量，
-//但由于常量不支持非基本类型，所以接口类型的error不能直接定义为常量。
+// 下面的EOF变量模仿了io包中的io.EOF变量。EOF本应是常量，
+// 但由于常量不支持非基本类型，所以接口类型的error不能直接定义为常量。
 var EOF error = errors.New("End Of File")
 
-//为了让error可以作为常量，下面给出了比较好的error常量定义的方法,
-//MyError以string为底层类型，实现了error接口。
+// 为了让error可以作为常量，下面给出了比较好的error常量定义的方法,
+// MyError以string为底层类型，实现了error接口。
 type MyError string
 
 func (me MyError) Error() string {
@@ -142,7 +142,7 @@ func TestMyError(t *testing.T) {
 
 /********************************************************************************************
 3.unsafe包中函数求值的常量特征。unsafe包中的函数是在编译期间求值，因此，可以作为常量表达式的组成部分。
-  只要unsfe包中的函数有返回值，且是可以定义为常量的基本类型。
+  只要unsfe包中的函数有返回值，且返回值是可以定义为常量的基本类型，那么就可以用这个函数来定义常量。
 **********************************************************************************************/
 //---------------unsafe包函数求值的常量特征练习 开始--------------------------------------------------//
 //const INT_SIZE uint = getIntSize() //运行期求值的函数不能作为常量表达式的一部分。

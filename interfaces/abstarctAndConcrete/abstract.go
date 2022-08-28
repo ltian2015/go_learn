@@ -12,39 +12,41 @@
    提供对共性属性的访问，应该以行为方式暴露，这样有利于隐藏事物内部属性的具体细节。
    人类对事物共性的抽象规律是先看到各种事物，然后观察到这些事物的共性，形成抽象的认识。
    而不是从一无所知开始产生抽象的概念，再看（第一个）给定的事物是否符合抽象。
-   所以，从这个角度来看，传统面向对象的设计是不符合人类认识事物的客观规律。
+   所以，从这个角度来看，传统面向对象的设计思维不符合人类认识事物普遍规律。
+
    传统面向对象的类设计的时候，必须先要有抽象的基类，才能定义子类。当我们定义一个类的时候，
    首先要考虑的是，它应该从哪个父类继承，这在对事物认识不全面的时候，很难抉择。
+
    无疑，GO语言不强制要求对象从某个抽象的父类继承符合人类认识事物共性的规律，很灵活。
-   go接口是一组行为的抽象，GO接口支持多组行为通过组合成为更大行为集合。
-   同时，实现接口的结构体struct 也可以通过组合来实现更大行为集合的实现。
+   go接口是一组行为的抽象，GO接口支持多组行为通过嵌入组合成为更大的行为集合。
+   同时，实现接口的结构体struct 也可以通过嵌入与组合来实现更大行为集合的实现。
    另外，GO的这种抽象与实现之间的隐式实现关系对里氏（liskvo）替换原则要求的更严格。
 
 **/
 
 package abstarctandconcrete
 
-//定一个了一个人类可识别的对象的接口规范
+// 定一个了一个人类可识别的对象的接口规范
 type IdentityObject interface {
 	GetId() string
 	GetName() string
 	GetPathName() string
 }
 
-//定义了一个可进行字符串读写的对象的接口规范
+// 定义了一个可进行字符串读写的对象的接口规范
 type IoObject interface {
 	Read() interface{}
 	Write(interface{}) (int, error)
 }
 
-//定义了一个可识别，具有字符串读写能力的对象接口规范
+// 定义了一个可识别，具有字符串读写能力的对象接口规范
 type IdentityStrIoObject interface {
 	IdentityObject
 	IoObject
 }
 
-//定一个了一个文件构建器的规范，这是一个函数类型，通过id,name,path,content构建一个
-//由于不支持范型，导致FileBuilder无法让实现方以定义内容类型的方式进行扩展。只能制定为一个可容纳任何数据的通用类型来定义文件的内容类型。
+// 定一个了一个文件构建器的规范，这是一个函数类型，通过id,name,path,content构建一个
+// 由于不支持范型，导致FileBuilder无法让实现方以定义内容类型的方式进行扩展。只能制定为一个可容纳任何数据的通用类型来定义文件的内容类型。
 type FileBuilder = func(id, name, path string, content interface{}) IdentityStrIoObject
 type FileBuilderStrategy = func(isAppend bool) FileBuilder
 
@@ -65,5 +67,3 @@ type Writer interface {
 	//但是，在Go中不可以。
 	Write(interface{})
 }
-
-

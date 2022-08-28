@@ -44,22 +44,22 @@ func Merge[T any](values []Mergable[T]) T {
 	return result
 }
 
-//////////以下代码代表两个不同的具体的类型，它们都不知道抽象的存在，可以分别独立存在于一个包中/////////////////
-//Score 是一个Mergable类型，它实现了Merge方法。
+// ////////以下代码代表两个不同的具体的类型，它们都不知道抽象的存在，可以分别独立存在于一个包中/////////////////
+// Score 是一个Mergable类型，它实现了Merge方法。
 type Score int
 
 func (this Score) Merge(s Score) Score {
 	return Score(this + s)
 }
 
-//Power 是一个Mergable类型，它实现了Merge方法。
+// Power 是一个Mergable类型，它实现了Merge方法。
 type Power int
 
 func (this Power) Merge(p Power) Power {
 	return Power(this + p)
 }
 
-////////////////////以下代码是一个应用，将抽象处理与具体类型相结合////////////////////////
+// //////////////////以下代码是一个应用，将抽象处理与具体类型相结合////////////////////////
 func TestApp(t *testing.T) {
 	s := Score(5)
 	var ms1 Mergable[Score] = s
