@@ -23,7 +23,7 @@ func TestArrayCopy(t *testing.T) {
 	a2 := a1
 	for i, v := range a2 {
 		if v != a1[i] {
-			t.Error("数组copy出错，源数组与目标数组值不相等")
+			t.Error("数组copy出错,源数组与目标数组值不相等")
 		}
 	}
 	a1[0] = 100
@@ -379,7 +379,7 @@ func TestCreateContainer(t *testing.T) {
 // 对于数组，如果数组是可寻址的，那么数组元素就可以寻址。数组字面量是不可以寻址的。
 // 切片因为有底层值部，元素都在底层值部中，且切片元素不可删除，只可追加，所以可以对已存在元素寻址。
 // 因此，任何切片中的元素都可以寻址，也就是说，尽管切片字面量自身不可寻址，但其中元素可寻置。
-// map元素不可寻址，因为map元素可以删除，且可能充分分配内存，所以key所指定的元素位置不固定。
+// map元素不可寻址，因为map元素可以删除，且可能重新分配内存，所以key所指定的元素位置不固定。
 
 func TestContainerElementAddressability(t *testing.T) {
 	var a = [...]int{1, 3, 5}

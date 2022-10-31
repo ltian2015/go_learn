@@ -1,4 +1,4 @@
-/**
+/*
 main包是包括可执行程序入口点函数文件的“特殊包”。
 其特殊之处在于必须用main命名该包，同时该包中必有一个文件包括了可执行程序入口点函数,也就是main()函数。
 main包被编译后，会形成一个可执行文件。
@@ -13,7 +13,8 @@ main包被编译后，会形成一个可执行文件。
 在本程序的main包中，主要学习和展示包变量的定义与初始化顺序、依赖包的引入、
 “空标识符”在依赖包的引入与变量声明中的用途，以及，初始化函数init()的特点与用途。
 
-**/
+*
+*/
 package main
 
 //com.example/golearn是在go.mod文件中定义的GO模块，“GO模块”代表了
@@ -34,6 +35,7 @@ import (
 	//使用空标识符(blank identifier) _ 作为包的别名可以引入一个包而暂时不使用（预留未来使用）
 	"fmt"
 	"sync"
+	"time"
 
 	_ "com.example/golearn/usefunction"
 )
@@ -41,16 +43,29 @@ import (
 // init()函数是一个特殊函数，用来完成包的初始化（变量初始化、验证与校验）。其特殊之处有两点：
 // 1.自动执行。当包及所依赖包的变量都被初始化之后，就会自动调用init函数。
 // 2. 该函数具有游动性质，可以在包中的一个文件或多个文件中多次按需出现。
+// GO程序的初始化运行在一个单独的goroutine中(主goroutine中)，但是该goroutine可以创建其他的goroutines，
+// 而这些goroutines可以并发运行。
+// 如果package p 引入了（imports）package q, 则q的init函数的完成要发生在p的任何init函数之前。
+// 所有的init函数的完成都“同步先于”main.main函数的启动。
 // 这个初始化函数用来验证是否已经登录。登录操作在login.go文件的init()函数中完成。
 func init() {
+
 	if !IsLogin {
+
 		panic("not login error")
 	}
+	var a string
+	go func() {
+		a = "hello"
+		time.Sleep(1 * time.Second)
+		println("hi,i'm in  init funcntion,but ,main function mabye over !")
+	}()
+	println(a)
 }
 
 var welcome string
 
-//本文件中第二个init()初始化函数，用来初始化welcome变量，即，使用login.go文件中定义的变量生成欢迎信息。
+// 本文件中第二个init()初始化函数，用来初始化welcome变量，即，使用login.go文件中定义的变量生成欢迎信息。
 func init() {
 	welcome = "hello " + UserName + " " + LoginTime.Format("2006-01-02 15:04:05")
 }
@@ -85,19 +100,21 @@ func main() {
 	go func() {
 		defer wg.Done()
 		func() {
-			panic("panic in a goroutine")
+			//panic("panic in a goroutine")
 		}()
 	}()
 	go func() {
 		defer wg.Done()
 		func() {
-			panic("panic in other goroutine")
+			//panic("panic in other goroutine")
 		}()
 	}()
 	wg.Wait()
-
+	time.Sleep(2 * time.Second)
 	println("main function  exit")
 
 	//	cb.ForRangeOnChannel()
+	var lock sync.Mutex
+	lock.Unlock()
 
 }

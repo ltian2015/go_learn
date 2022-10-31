@@ -1,18 +1,21 @@
-/**
+/*
+*
 usereflect包主要使用如何使用反射。理解反射的机制和三大法则。
 但对于高性能的热点路径代码，最好不要使用反射机制，因为反射目前采用的是运行时库，
 内存分配主要在堆中，可能会引起垃圾回收的效率问题。
-**/
+*
+*/
 package usereflect
 
 import (
 	"fmt"
 	"reflect"
+	"testing"
 	"time"
 	"unsafe"
 )
 
-func TestReflect2() {
+func TestReflect2(t *testing.T) {
 	//在GO中，每个接口变量都会被编译器翻译为一个类似（VarValue,VarType）这样的一个二元组，
 	//其中VarValue被称为动态值，是接口的实际值。VarType被称为动态类型，是变量具体的真实类型，而不是接口类型这样的抽象类型。
 	//比如，下面的 reader就是一个（s1,*Student）这样的一个二元组。 *Strudent类型实现了Reader接口的read方法。
@@ -21,6 +24,7 @@ func TestReflect2() {
 	var reader Reader = s1
 	fmt.Println(reader.read())
 	var x float64 = 3.4
+
 	//GO 反射法则1: 反射机制把接口值（Interface{}）变为反射对象(reflect.Type或reflect.Value)
 
 	fmt.Println("type:", reflect.TypeOf(x).Kind() == reflect.Float64)
@@ -76,7 +80,6 @@ func testInterface() {
 	fmt.Println(t.read())
 }
 
-//
 func LearnRoutine() {
 	go func() {
 		time.Sleep(5 * time.Second)
@@ -93,7 +96,7 @@ func LearnRoutine() {
 	}
 }
 
-//类型转换
+// 类型转换
 func TypeConvert() {
 	type IntSlice []int
 	type MySlice []int
@@ -153,6 +156,10 @@ func testReflect() {
 	println(p1.age, p2p.age)
 }
 
+func BenchmarkDoCompute(b *testing.B) {
+	sum := 0
+	for i := 0; i < 100000000; i++ {
+		sum += i
+	}
 
-
-
+}

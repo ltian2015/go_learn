@@ -3,26 +3,27 @@ package basic
 import (
 	"fmt"
 	"sync"
+	"testing"
 )
 
-//知识点1:关于channel的方向。channel天生就是用于goroutines之间传递数据的，因此，数据传递方向天生是双向的（一侧写，一侧读s）。
-//但是，通常使用channel的函数要么是数据发送者（站在channel的写入侧），要么是数据的读取者（站在channel的读取侧）。
-//因此，可以为了确保“单侧”的逻辑可靠性，可以将channle 变量声明名为单向(只读、只写)。
-//而且，由于单方向读或写的channel是不同的类型，可以看作分别实现了read或write接口函数的两个不同类型。
-//而双向channel则可以看作同时实现了read，write两个接口函数的类型，
-//所以，双向channel变量可以赋值给单向channel，但方向不同的单向channel间不可以相互赋值，
-//也不可以把单向channel赋值给双向channel。
-//在channel变量的声明与使用中，箭头方向表示数据流动方向，没有箭头表示数据可双向流动
-//比如：
+// 知识点1:关于channel的方向。channel天生就是用于goroutines之间传递数据的，因此，数据传递方向天生是双向的（一侧写，一侧读s）。
+// 但是，通常使用channel的函数要么是数据发送者（站在channel的写入侧），要么是数据的读取者（站在channel的读取侧）。
+// 因此，可以为了确保“单侧”的逻辑可靠性，可以将channle 变量声明名为单向(只读、只写)。
+// 而且，由于单方向读或写的channel是不同的类型，可以看作分别实现了read或write接口函数的两个不同类型。
+// 而双向channel则可以看作同时实现了read，write两个接口函数的类型，
+// 所以，双向channel变量可以赋值给单向channel，但方向不同的单向channel间不可以相互赋值，
+// 也不可以把单向channel赋值给双向channel。
+// 在channel变量的声明与使用中，箭头方向表示数据流动方向，没有箭头表示数据可双向流动
+// 比如：
 var writeOnlyChan chan<- int //声明一个只写 channel
 var readOnlyChan <-chan int  //声明只读 channel
 var readWriteChan chan int   //声明读写双向channel
 
-//知识点2:关于channel的构建及方向。和其他引用类型map，slice一样，channel在使用前，必须make来创建。
-//否则，如果不用make来创建，则channel的零值是nil，这一点也和其他引用类型（Map、Slice）一样。
-//虽然为了程序逻辑的可靠性，channel变量在单侧（读取侧或写入侧）使用时可以声明为单向，
-//但是创建单向channel几乎不可用。所以，channel创建时都是双向的，而在一侧使用时声明为单向。
-//比如：
+// 知识点2:关于channel的构建及方向。和其他引用类型map，slice一样，channel在使用前，必须make来创建。
+// 否则，如果不用make来创建，则channel的零值是nil，这一点也和其他引用类型（Map、Slice）一样。
+// 虽然为了程序逻辑的可靠性，channel变量在单侧（读取侧或写入侧）使用时可以声明为单向，
+// 但是创建单向channel几乎不可用。所以，channel创建时都是双向的，而在一侧使用时声明为单向。
+// 比如：
 func init() {
 	if readWriteChan == nil {
 		println("readWriteChan is nil ,should be create!")
@@ -32,29 +33,29 @@ func init() {
 	readOnlyChan = readWriteChan   //所有拷贝的引用都指向同一个”真实对象“
 }
 
-//知识点3: channel提供的goroutine的基本同步机制——的读写阻塞功能与。完成不同goroutine之间
-//通信功能channel，天生就带阻塞功能，这一功能是其实现goroutine同步机制的基础。具体是：
-//如果使用无缓冲的channel进行通信，因为没有中间的缓存，写入方一旦试图写入(var->chan)，
-//就必须等待接受者准备好，如果接收者没有准备好，那么写入者就会阻塞，无法执行后续操作。
-//而接收方一旦试图接受数据（var<-chan），就会阻塞，直到接收到了写入者所写入的数据。
-//这就好比双人抛接球训练中，传球者必须做好抛球准备（执行向chanenl试图写入操作 var->chan），
-//也就是持球在手等待接收者的准备好接球后,才能将球抛出，球抛出后才能进行下一个动作（解除阻塞）。
-//而接球者一旦试图接球，准备好了接球动作(执行从channel试图取数操作：var<-chan)，
-//就不能有其他动作，直到接到球后才能执行下一个动作(解除阻塞)。
-//无缓冲channel使得两个goroutine遵照“发送一个，处理一个”这种严格的“同步”顺序。
-//如果channel中有缓冲区，则可以同时有多个goroutine对channel进行异步操作，当缓冲区
-//为空时，试图读取channel的“读取侧”goroutine会阻塞，直到缓冲区有数据可以取走。
-//当缓冲区写满时，试图写入channel的”写入侧“goroutine会阻塞，直到缓冲区腾出空间可以写入数据。
-//基于上述认识，在同一个goroutine中对同一个没有缓冲区的channel进行读写“很容易”造成死锁。
+// 知识点3: channel提供的goroutine的基本同步机制——的读写阻塞功能与。完成不同goroutine之间
+// 通信功能channel，天生就带阻塞功能，这一功能是其实现goroutine同步机制的基础。具体是：
+// 如果使用无缓冲的channel进行通信，因为没有中间的缓存，写入方一旦试图写入(var->chan)，
+// 就必须等待接受者准备好，如果接收者没有准备好，那么写入者就会阻塞，无法执行后续操作。
+// 而接收方一旦试图接受数据（var<-chan），就会阻塞，直到接收到了写入者所写入的数据。
+// 这就好比双人抛接球训练中，传球者必须做好抛球准备（执行向chanenl试图写入操作 var->chan），
+// 也就是持球在手等待接收者的准备好接球后,才能将球抛出，球抛出后才能进行下一个动作（解除阻塞）。
+// 而接球者一旦试图接球，准备好了接球动作(执行从channel试图取数操作：var<-chan)，
+// 就不能有其他动作，直到接到球后才能执行下一个动作(解除阻塞)。
+// 无缓冲channel使得两个goroutine遵照“发送一个，处理一个”这种严格的“同步”顺序。
+// 如果channel中有缓冲区，则可以同时有多个goroutine对channel进行异步操作，当缓冲区
+// 为空时，试图读取channel的“读取侧”goroutine会阻塞，直到缓冲区有数据可以取走。
+// 当缓冲区写满时，试图写入channel的”写入侧“goroutine会阻塞，直到缓冲区腾出空间可以写入数据。
+// 基于上述认识，在同一个goroutine中对同一个没有缓冲区的channel进行读写“很容易”造成死锁。
 // 比如下面两个deadLock()函数：
-func DeadLock1() {
+func TestDeadLock1(t *testing.T) {
 	//writeOnlyChan实际上与readOnlyChan是一个实例，所以在同一个goroutine中读写该channel就会死锁
-	writeOnlyChan <- 10   //写入数据，此时，当前goroutine会阻塞在慈航，下一行无法执行，因为读取侧没有专备好。
+	writeOnlyChan <- 10   //写入数据，此时，当前goroutine会阻塞在此处，下一行无法执行，因为读取侧没有专备好。
 	num := <-readOnlyChan //读取数据，但是由于当前goroutine已经阻塞到上一个操作，这个操作不会被执行，又因为该操作是读取侧操作，因此导致死锁。
 	println(num)
 }
 
-func DeadLock2() {
+func TestDeadLock2(t *testing.T) {
 	//writeOnlyChan实际上与readOnlyChan是一个实例，所以在同一个goroutine中读写该channel就会死锁
 	writeOnlyChan <- 10 //写入数据，此时，当前goroutine会阻塞在此行，下一行无法执行，因为读取侧没有准备好。
 	go func() {         //读取数据，但是由于当前goroutine已经阻塞在上一个操作上，这个操作不会被执行，又因为该操作是读取侧操作，因此导致死锁。
@@ -63,8 +64,8 @@ func DeadLock2() {
 	}()
 }
 
-//为了修正死锁问题，必须让两个不同的goroutine读取同一个channel实例。
-func FixDeadLock() {
+// 为了修正死锁问题，必须让两个不同的goroutine读取同一个channel实例。
+func TestFixDeadLock(t *testing.T) {
 	var wg sync.WaitGroup
 	write := func() {
 		writeOnlyChan <- 10 //write goroutine试图写入数据，阻塞等待read goroutine准备就绪就发送数据
@@ -81,14 +82,14 @@ func FixDeadLock() {
 	wg.Wait()  //等待子例程执行完毕，主例程才退出，否则看不到子例程的执行结果。
 }
 
-//为了修正死锁问题，可以采用有缓冲的channel。
-func FixDeadLock2() {
+// 为了修正死锁问题，可以采用有缓冲的channel。
+func TestFixDeadLock2(t *testing.T) {
 	ch := make(chan int, 1)
 	ch <- 10
 	num := <-ch
 	println(num)
 }
-func BufferedChannel() {
+func TestWithBufferedChannel(t *testing.T) {
 	ch := make(chan int, 1)
 	ch <- 10     //发送方（当前gotoutine）只发送了一个数据
 	num1 := <-ch // 接收方（当前gotoutine）试图取走第一个数据，因为有缓冲且能成功取走数据，所以不会阻塞。
@@ -111,7 +112,7 @@ v, ok := <-ch
 例如终止一个range 循环。
 **/
 
-func CloseChannel() {
+func TestCloseChannel(t *testing.T) {
 
 	ch := make(chan int, 10) //channel缓冲区容量为0
 	ch <- 100000             //向channel发送第一个数据
@@ -139,7 +140,7 @@ func CloseChannel() {
 for range 这一行（操作）代码上。
 **/
 
-func ForRangeOnChannel() {
+func TestForRangeOnChannel(t *testing.T) {
 	ch := make(chan int, 5)
 	var wg sync.WaitGroup
 	send := func(count int) {

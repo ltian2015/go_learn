@@ -1,0 +1,13 @@
+readWriteChan is nil ,should be create!
+压缩前长度为 ： 17408 压缩后长度为 ： 98
+goos: darwin
+goarch: amd64
+pkg: com.example/golearn/concurrent/basic
+cpu: Intel(R) Core(TM) i7-7820HQ CPU @ 2.90GHz
+BenchmarkGunzipNopool-8   	   85814	     12743 ns/op	   41289 B/op	       6 allocs/op
+BenchmarkGunzipNopool-8   	   89998	     13372 ns/op	   41291 B/op	       6 allocs/op
+BenchmarkGunzipNopool-8   	   91825	     12961 ns/op	   41292 B/op	       6 allocs/op
+BenchmarkGunzipNopool-8   	   94406	     13160 ns/op	   41293 B/op	       6 allocs/op
+BenchmarkGunzipNopool-8   	   88480	     12755 ns/op	   41292 B/op	       6 allocs/op
+PASS
+ok  	com.example/golearn/concurrent/basic	9.424s

@@ -1,6 +1,23 @@
-/**
+/*
+*
+!!! go中进行debug测试，要求必须安装dlv工具，但dlv工具版本与go版本不匹配时则无法进行测试与debug，
+因此，必须更新dlv工具，但更新安装无法自动覆盖，必须要删除原有已安装的dlv工具，更新方式安装dlv的命令如下：
+sudo rm $GOROOT/bin/dlv
+sudo rm $GOPATH/bin/dlv
+sudo go get -u github.com/go-delve/delve/cmd/dlv
+
+go的自动化自测试工具go testd对被测试的文件与函数的命名约定：
+
+	1.测试文件名必须以  _test结尾
+	2.测试函数必须以Test开头，参数必须是(t *testing.T)
+	3.一个包路径下只有一个测试文件。（在vscode工具至少是这样）
+
+按照上述约定，在vscode中，使用go test -v ${fileDirname}就可以测试当前文件所在包。
+-v 参数可以把测试过程中的fmt.print 结果显示出来。
+
 controlflow包主要学习for,if,switch等三个用于控制程序执行分支的语句。
-**/
+*
+*/
 package controlflow
 
 /**
@@ -66,7 +83,7 @@ func wihleLoopWithFor() {
 	}
 }
 
-//infiniteLoop函数使用for实现无限循环。for{ }就是无限循环。
+// infiniteLoop函数使用for实现无限循环。for{ }就是无限循环。
 func infiniteLoop() {
 	fmt.Print("Please enter a  number :")
 	for {
@@ -81,10 +98,10 @@ func infiniteLoop() {
 
 }
 
-//foreachLoop函数使用for与range操作 配合，实现foreach，
-//range 操作目前只适合array,slice,string,map ,channel这个5个包含多个同类元素的类型。
-//必须注意的是，for与range操作配合的时候，会把每个元素及其index拷贝赋值给for块中临时定义的二元组变量，
-//对该变量取地址，会得到同一个地址，试图通过修改该变量的值来修改被遍历的元素都不会有效果。
+// foreachLoop函数使用for与range操作 配合，实现foreach，
+// range 操作目前只适合array,slice,string,map ,channel这个5个包含多个同类元素的类型。
+// 必须注意的是，for与range操作配合的时候，会把每个元素及其index拷贝赋值给for块中临时定义的二元组变量，
+// 对该变量取地址，会得到同一个地址，试图通过修改该变量的值来修改被遍历的元素都不会有效果。
 func foreachLoop() {
 	type Foo struct {
 		bar string
@@ -184,9 +201,9 @@ loop:
 	}
 }
 
-//在go中，只有 break,continue ,goto 3个命令可以操作标签(label)
-//标签的妙用是：为嵌套循环定义标签(label)有利于在内外循环中控制外层循环的break或continue。
-//注意，尽量不要用goto配合标签来实现是逻辑分支的跳转，在大程序中，这种方式不利于“程序的构块化”。
+// 在go中，只有 break,continue ,goto 3个命令可以操作标签(label)
+// 标签的妙用是：为嵌套循环定义标签(label)有利于在内外循环中控制外层循环的break或continue。
+// 注意，尽量不要用goto配合标签来实现是逻辑分支的跳转，在大程序中，这种方式不利于“程序的构块化”。
 func testForLoopLabel() {
 outerLoop:
 	for i := 0; i < 100; i++ {

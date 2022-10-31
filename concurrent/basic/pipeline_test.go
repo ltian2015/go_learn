@@ -2,6 +2,7 @@ package basic
 
 import (
 	"sync"
+	"testing"
 	"time"
 )
 
@@ -30,7 +31,7 @@ func gen(nums ...int) <-chan int {
 	return out
 }
 
-//这是第二个“管段”，接收第一个“管段”生成的数据，进行平方计算，然后再发送出去。
+// 这是第二个“管段”，接收第一个“管段”生成的数据，进行平方计算，然后再发送出去。
 func sq(in <-chan int) <-chan int {
 	out := make(chan int)
 	sqThenSend := func() {
@@ -43,7 +44,7 @@ func sq(in <-chan int) <-chan int {
 	return out
 }
 
-//这是第最后的“归宿管段（sink segmentn）”，负责打印，不在产生新数据。
+// 这是第最后的“归宿管段（sink segmentn）”，负责打印，不在产生新数据。
 func printNum(in <-chan int) {
 	print := func() {
 		for i := range in {
@@ -54,15 +55,15 @@ func printNum(in <-chan int) {
 
 }
 
-//将三个“管段”组装一个管道，由于channel无缓冲，所以三个管段实际上是串行执行的。
-func SetupPipeline1() {
+// 将三个“管段”组装一个管道，由于channel无缓冲，所以三个管段实际上是串行执行的。
+func TestSetupPipeline1(t *testing.T) {
 	cout := gen(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 	sqOut := sq(cout)
 	printNum(sqOut)
 }
 
-//下面增加一个“新的管段”可以完成多个“管段”的结果合并，
-//以多个管段作为输入的现象称为“扇入Fan-in”
+// 下面增加一个“新的管段”可以完成多个“管段”的结果合并，
+// 以多个管段作为输入的现象称为“扇入Fan-in”
 func merge(cs ...<-chan int) <-chan int {
 	out := make(chan int)
 	var wg sync.WaitGroup
@@ -85,8 +86,8 @@ func merge(cs ...<-chan int) <-chan int {
 	return out //返回工作中的channel给调用者使用
 }
 
-//组装上面新增加merge管段，形成新的管道，合并多个sq的结果。
-func SetupPipeline2() {
+// 组装上面新增加merge管段，形成新的管道，合并多个sq的结果。
+func TestSetupPipeline2(t *testing.T) {
 	ch1 := gen(1, 3, 5, 7, 9, 11, 13, 15, 17, 19)
 	ch2 := gen(2, 4, 6, 8, 10, 12, 14, 16, 18, 20)
 	sq1 := sq(ch1)
@@ -95,7 +96,7 @@ func SetupPipeline2() {
 	printNum(results)
 }
 
-func SetupPipeline3() {
+func TestSetupPipeline3(t *testing.T) {
 	ch1 := gen(1, 3, 5, 7, 9, 11, 13, 15, 17, 19)
 	ch2 := gen(2, 4, 6, 8, 10, 12, 14, 16, 18, 20)
 	sq1 := sq(sq(ch1))
@@ -194,7 +195,7 @@ func mergeCancelable(done <-chan int, cs ...<-chan int) <-chan int {
 	return out //返回工作中的channel给调用者使用
 }
 
-func SetupPipelineAndCancel() {
+func TestSetupPipelineAndCancel(t *testing.T) {
 	done := make(chan int)
 	ch1 := genCancelable(done, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25)
 	ch2 := genCancelable(done, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26)

@@ -8,10 +8,44 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"testing"
+	"time"
 )
 
-//MD5AllSingleThread函数遍历给定的根目录，提取目录下每个正常文件（不含子目录）的md5数字指纹。
-//并返回文件路径与md5数字指纹字节数组之间的映射（map）
+func doMd5Test(path string, testedFunc func(path string) (map[string][md5.Size]byte, error)) {
+	start := time.Now()
+	fdMap, err := testedFunc(path)
+	//求取时间差，求取时间差(Duration)方法包括：Time对象的Sub方法，time包中的Since和Until函数
+	dur := time.Since(start) //等价与以下两句
+	//end := time.Now()
+	//durMs := end.Sub(start)
+	fmt.Printf("程序持续了 %v毫秒\n", dur.Milliseconds())
+	if err != nil {
+		println(err)
+		return
+	}
+	for k, v := range fdMap {
+		fmt.Printf("%v %x\n", k, v)
+	}
+	fmt.Printf("共提取了%v个文件的数字指纹\n", len(fdMap))
+}
+func TestSingleThreadMd5All(t *testing.T) {
+	const root string = "/Users/learn/Documents/_development/c"
+	doMd5Test(root, MD5AllSingleThread)
+}
+
+func TestMD5AllMultiThreadNoBound(t *testing.T) {
+	const root string = "/Users/learn/Documents/_development/c"
+	doMd5Test(root, MD5AllMultiThreadNoBound)
+}
+
+func TestMD5AllMultiThreadByBound(t *testing.T) {
+	const root string = "/Users/learn/Documents/_development/c"
+	doMd5Test(root, MD5AllMultiThreadWithBound)
+}
+
+// MD5AllSingleThread函数遍历给定的根目录，提取目录下每个正常文件（不含子目录）的md5数字指纹。
+// 并返回文件路径与md5数字指纹字节数组之间的映射（map）
 func MD5AllSingleThread(root string) (map[string][md5.Size]byte, error) {
 	m := make(map[string][md5.Size]byte)
 	fileHandler := func(path string, d fs.DirEntry, err error) error {
@@ -72,16 +106,16 @@ func MD5AllMultiThreadNoBound(root string) (map[string][md5.Size]byte, error) {
 
 }
 
-//sumFiles函数是一个“管段”函数，管段函数内部执行往往采用多线程并发的模式，
-//而其输入和输出则是“信道(channel)”。多线程并行执行的代码主要负责读写“信道”。
-//sumFiles函数开启一个线程遍历每个文件（这样不必等待遍历结束才返回），
-//在该遍历线程中，针对每个遍历到的文件，又开启一个文件处理线程读取该文件内容并提取指纹。
-//因此，sumFiles函数建立并输出了了“一个唯一”的结果信道和一个错误输出信道，
-//每个文件处理线程都将结果写入到结果信道中，如果遍历本身出现错误，则写入错误信道。
-//sumFiles作为信道的创建者，要负责结果信道的关闭。
-//所以遍历线程中要创建等待组（sync.WaitGroup）,所有文件处理线程都是等待组中的工作者，
-//当所有工作者都完成工作后（等待组的等待数量为0），则意味着遍历结束，关闭结果通道。
-//这样循环守候处理结果信道的线程就可以不在阻塞，向下执行，从而结束整个处理。
+// sumFiles函数是一个“管段”函数，管段函数内部执行往往采用多线程并发的模式，
+// 而其输入和输出则是“信道(channel)”。多线程并行执行的代码主要负责读写“信道”。
+// sumFiles函数开启一个线程遍历每个文件（这样不必等待遍历结束才返回），
+// 在该遍历线程中，针对每个遍历到的文件，又开启一个文件处理线程读取该文件内容并提取指纹。
+// 因此，sumFiles函数建立并输出了了“一个唯一”的结果信道和一个错误输出信道，
+// 每个文件处理线程都将结果写入到结果信道中，如果遍历本身出现错误，则写入错误信道。
+// sumFiles作为信道的创建者，要负责结果信道的关闭。
+// 所以遍历线程中要创建等待组（sync.WaitGroup）,所有文件处理线程都是等待组中的工作者，
+// 当所有工作者都完成工作后（等待组的等待数量为0），则意味着遍历结束，关闭结果通道。
+// 这样循环守候处理结果信道的线程就可以不在阻塞，向下执行，从而结束整个处理。
 func sumFilesNoBound(done <-chan struct{}, root string) (<-chan md5Result, <-chan error) {
 	rc := make(chan md5Result, 5)
 	errc := make(chan error)
@@ -131,7 +165,8 @@ func sumFilesNoBound(done <-chan struct{}, root string) (<-chan md5Result, <-cha
 	return rc, errc
 }
 
-/**
+/*
+*
 这个“管段”负责收集个线程向管道中传送的结果，整理成最终结果。
 */
 func collectSum(rc <-chan md5Result) (map[string][md5.Size]byte, error) {
@@ -189,8 +224,7 @@ func walkFiles(done <-chan struct{}, root string) (<-chan string, <-chan error) 
 	return pathChan, errChan
 }
 
-//用给定的固定边界数量（bound）的线程（goroutine）提取paths信道（channel）传递过来的path
-//
+// 用给定的固定边界数量（bound）的线程（goroutine）提取paths信道（channel）传递过来的path
 func digestFileStreamByBound(done <-chan struct{}, paths <-chan string, bound int) <-chan md5Result {
 	md5ResultChan := make(chan md5Result)
 	var wg sync.WaitGroup
@@ -215,9 +249,9 @@ func digestFileStreamByBound(done <-chan struct{}, paths <-chan string, bound in
 }
 
 // digester函数是一个真正读取信道进行工作的工作者（worker）函数，该工作者方法使用for range语句主动
-//轮询信道（paths channel）,从中取出数据，进行数据指纹提取的处理，
+// 轮询信道（paths channel）,从中取出数据，进行数据指纹提取的处理，
 // 这种通过主动读取信道数进行并发的方式，意味着多个读取同一个信道的并发工作者之间是能者多劳，
-//处理所读取到的数据越快的工作者就会从信道中读取更多的数据，这样可以充分利用计算机的CPU资源。
+// 处理所读取到的数据越快的工作者就会从信道中读取更多的数据，这样可以充分利用计算机的CPU资源。
 func digester(done <-chan struct{}, paths <-chan string, md5ResultChan chan<- md5Result) {
 	for path := range paths {
 		data, err := os.ReadFile(path)

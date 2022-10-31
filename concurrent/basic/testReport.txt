@@ -1,0 +1,4 @@
+readWriteChan is nil ,should be create!
+压缩前长度为 ： 17408 压缩后长度为 ： 98
+PASS
+ok  	com.example/golearn/concurrent/basic	3.036s

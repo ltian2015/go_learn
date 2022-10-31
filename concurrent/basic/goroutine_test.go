@@ -46,9 +46,9 @@ https://www.cs.uic.edu/~jbell/CourseNotes/OperatingSystems/4_Threads.html
 
  *******************************************************************/
 
-//TestHugeNumGortouineInRunning展示了一个运行1000万个goroutine的程序。
-//在16G内存，4核8线程，2.9G HZ的macbookPro电脑上，一分钟左右可完成1000万个互不相关简单线程的运行。
-//可见，Goroutine确实是一种轻量级的用户线程。
+// TestHugeNumGortouineInRunning展示了一个运行1000万个goroutine的程序。
+// 在16G内存，4核8线程，2.9G HZ的macbookPro电脑上，一分钟左右可完成1000万个互不相关简单线程的运行。
+// 可见，Goroutine确实是一种轻量级的用户线程。
 func TestHugeNumGortouineInRunning(t *testing.T) {
 	const goroutineCount = 10000000 // 同时存活的线程数量
 	var wg sync.WaitGroup
@@ -74,8 +74,4 @@ func TestHugeNumGortouineInRunning(t *testing.T) {
 	}
 	fmt.Println("all goroutines terminate,the main program exit")
 
-
-	
 }
-
-

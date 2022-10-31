@@ -7,19 +7,19 @@ import (
 	"testing"
 )
 
-//泛型中，无论是泛型函数，还是泛型类型，都是定义类型参数列表。
-//定义类型参数与定义普通参数一样，都要定义参数名及对应的参数类型。
-//类型参数的被称为类型是元类型(meta-type)，也就是关于类型的类型。
-//元类型在go泛型中被称为约束“constain”
+// 泛型中，无论是泛型函数，还是泛型类型，都是定义类型参数列表。
+// 定义类型参数与定义普通参数一样，都要定义参数名及对应的参数类型。
+// 类型参数的被称为类型是元类型(meta-type)，也就是关于类型的类型。
+// 元类型在go泛型中被称为约束“constain”
 // 泛型类型方法(method)的接收者（reciever）的类型应与该泛型类型一样。
 // 但方法接收者的泛型类型中的类型参数名称可以与泛型类型定义中的类型参数名称不同。
-//比如，泛型类型Range的类型参数名字为E，该类型参数E的元类型（meta-type）是ordered，
-//其方法Handle中接收者参数的中的类型参数名称为T，也就是说接受者的类型是Range[T],
-//但这个类型参数T的元类型（meta-type）仍然是ordered。说到底参数类型名称只是为元类型（meta-type）
-//提供了一个便利的引用名而已，元类型（meta-type）才是重要的。
-//在使用泛型的时候，一定要为泛型的形式参数（parameter）指定具体类型的实际参数（argument）。
-//这种操作被称为泛型类型的实例化（instantiation）。泛型类型（Generic）实例化的结果是产生了一个
-//类型（Type）,类型(Type)实例化后，会产生值(Value)。
+// 比如，泛型类型Range的类型参数名字为E，该类型参数E的元类型（meta-type）是ordered，
+// 其方法Handle中接收者参数的中的类型参数名称为T，也就是说接受者的类型是Range[T],
+// 但这个类型参数T的元类型（meta-type）仍然是ordered。说到底参数类型名称只是为元类型（meta-type）
+// 提供了一个便利的引用名而已，元类型（meta-type）才是重要的。
+// 在使用泛型的时候，一定要为泛型的形式参数（parameter）指定具体类型的实际参数（argument）。
+// 这种操作被称为泛型类型的实例化（instantiation）。泛型类型（Generic）实例化的结果是产生了一个
+// 类型（Type）,类型(Type)实例化后，会产生值(Value)。
 //
 // ListHead is the head of a linked list.
 type ListHead[T any] struct {
@@ -59,7 +59,7 @@ func Min[T interface {
 	return t
 }
 
-//嵌入了约束型的接口就只能作为约束而存在，不能当作普通接口来使用。
+// 嵌入了约束型的接口就只能作为约束而存在，不能当作普通接口来使用。
 // 不能用来声明变量
 type ComparableAdder interface {
 	comparable //这是一个约束类型的接口，非普通接口。
@@ -116,7 +116,7 @@ func TestTypeInferenceByFuncCall(t *testing.T) {
 
 }
 
-////////////////////基于约束的类型推断/////////////////////
+// //////////////////基于约束的类型推断/////////////////////
 type integer interface {
 	int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64
 }
@@ -158,14 +158,14 @@ func TestTypeInferenceByConstrain(t *testing.T) {
 
 }
 
-////////////////////////////////////////////////////////////////////
-////////////////指针方法案例 Pointer Method Example////////////////////////////////////////////
-//这是一个类型约束
+// //////////////////////////////////////////////////////////////////
+// //////////////指针方法案例 Pointer Method Example////////////////////////////////////////////
+// 这是一个类型约束
 type Setter interface {
 	Set(string)
 }
 
-//FromString函数使用字符串切片作为输入，返回类型T的切片。
+// FromString函数使用字符串切片作为输入，返回类型T的切片。
 // 注意，由于类型参数T没有用在函数的输入中，所以，无法使用函数输入参数进行类型推断。
 // 如果 T是指针类型这个方法的实现会产生运行时错误
 func FromStrings[T Setter](s []string) []T {
@@ -178,7 +178,7 @@ func FromStrings[T Setter](s []string) []T {
 
 type Settable int
 
-//注意是*Settable实现了 Set方法，而不是Settable实现了Set方法。
+// 注意是*Settable实现了 Set方法，而不是Settable实现了Set方法。
 func (p *Settable) Set(v string) {
 	if i, err := strconv.Atoi(v); err != nil {
 		panic(err)
@@ -196,20 +196,20 @@ func TestPointerExample1(t *testing.T) {
 	fmt.Println(ss)
 }
 
-//在Go语言中，普通接口是对“引用了具体类型”的绝对相同的方法签名的类型的一种抽象，可称之为“严格”共性行为的抽象。
-//而泛型接口，则是对“引用了可变类型参数”的语义相同的方法签名的类型的一种抽象，可称之为“宽松”共性行为抽象。
-//由于普通接口的“严格”共性要求，使得具体类型的签名必须与接口签名保持完全一致。
-//如果每个具体类型的共性行为都要操作自身类型，那这些具体类型就无法普通接口所要求的“严格”共性要求，
-//除非，每个具体类型都将共性行为中被操作的自身类型变为相同的接口类型，这就使得具体类型必须依赖抽象类型。
-//带来的问题就是抽象与具体分离的理念不够彻底，因为具体类型本身不应该知道抽象才对，因为它可能被从多个角度抽象。
-//泛型接口的出现使得抽象可以与具体彻底分离。泛型接口用“可变的类型参数”作为共性行为中被操作的类型，因此，放宽了
-//对共性行为的抽象范围，每当用一个具体类型来实例化一个泛型接口，就产生了一个新的，普通的，接口类型，
-//这个新的，普通的，接口类型则表达了“严格”的共性要求。而用来实例化该泛型接口的具体类型则往往是实现了
-//泛型接口共性行为的类型。
-//Setter2是一个类型约束，它定义了这样一种类型：
-//1.实现了一个设置string值的Set方法。
-//2. 而且，是用这个类型的指针类型来实现Set方法。
-//总体来说，Setter2定义了一个类型集合，该集合中的类型是T的指针类型，并实现了Set(string)方法 。
+// 在Go语言中，普通接口是对“引用了具体类型”的绝对相同的方法签名的类型的一种抽象，可称之为“严格”共性行为的抽象。
+// 而泛型接口，则是对“引用了可变类型参数”的语义相同的方法签名的类型的一种抽象，可称之为“宽松”共性行为抽象。
+// 由于普通接口的“严格”共性要求，使得具体类型的签名必须与接口签名保持完全一致。
+// 如果每个具体类型的共性行为都要操作自身类型，那这些具体类型就无法普通接口所要求的“严格”共性要求，
+// 除非，每个具体类型都将共性行为中被操作的自身类型变为相同的接口类型，这就使得具体类型必须依赖抽象类型。
+// 带来的问题就是抽象与具体分离的理念不够彻底，因为具体类型本身不应该知道抽象才对，因为它可能被从多个角度抽象。
+// 泛型接口的出现使得抽象可以与具体彻底分离。泛型接口用“可变的类型参数”作为共性行为中被操作的类型，因此，放宽了
+// 对共性行为的抽象范围，每当用一个具体类型来实例化一个泛型接口，就产生了一个新的，普通的，接口类型，
+// 这个新的，普通的，接口类型则表达了“严格”的共性要求。而用来实例化该泛型接口的具体类型则往往是实现了
+// 泛型接口共性行为的类型。
+// Setter2是一个类型约束，它定义了这样一种类型：
+// 1.实现了一个设置string值的Set方法。
+// 2. 而且，是用这个类型的指针类型来实现Set方法。
+// 总体来说，Setter2定义了一个类型集合，该集合中的类型是T的指针类型，并实现了Set(string)方法 。
 type Setter2[T any] interface {
 	Set(string)
 	*T // 要求用T的指针类型满足此约束，也就是说用T的指针类型实现Set(string)方法。
@@ -247,8 +247,8 @@ func TestPointerExample2(t *testing.T) {
 	//_ = st2
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////类型集与方法共存的约束定义/////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////类型集与方法共存的约束定义/////////////////////////////////////////////////////
 type StringableSignedInteger interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64
 	String() string
@@ -277,20 +277,20 @@ func TestComplextConstrain(t *testing.T) {
 
 }
 
-/////////////////////////////////////////////////////////////////////////////////
-//////////////使用复合（composite）类型定义的约束///////////////////////////////////////////////////
-//对于使用复合类型所定义的约束，也就是约束所定义的类型集合中的类型都是复合类型，golang泛型对这样的约束（类型集合）
-//附加了一个要求：
-//an operation may only be used if the operator accepts identical input types (if any)
-//and produces identical result types for all of the types in the type set
-//对泛型的类型参数可使用的共性方法对于类型集合中的每个类型而言，都能够“操作同一种输入类型，而且返回同一种结果类型”。
+// ///////////////////////////////////////////////////////////////////////////////
+// ////////////使用复合（composite）类型定义的约束///////////////////////////////////////////////////
+// 对于使用复合类型所定义的约束，也就是约束所定义的类型集合中的类型都是复合类型，golang泛型对这样的约束（类型集合）
+// 附加了一个要求：
+// an operation may only be used if the operator accepts identical input types (if any)
+// and produces identical result types for all of the types in the type set
+// 对泛型的类型参数可使用的共性方法对于类型集合中的每个类型而言，都能够“操作同一种输入类型，而且返回同一种结果类型”。
 type byteseq interface {
 	//复合类型，也就是多个类型组成的类型，这里是数组类型[]与byte类型共同组成的复合类型.目前共8种。
 	// 接口（interface），数组（array），指针（pointer）、结构（struct）、函数(function)、切片(slice)、映射（map）、通道（channel）都是复合类型。
 	string | []byte
 }
 
-//Join函数将第数组a中的元素使用连接符 sep连接起来，并返回连接结果。
+// Join函数将第数组a中的元素使用连接符 sep连接起来，并返回连接结果。
 func Join[T byteseq](a []T, sep T) (ret T) {
 	if len(a) == 0 {
 		return ret
@@ -335,50 +335,57 @@ func TestCompositeTypeGeneric(t *testing.T) {
 	println(s)
 }
 
-type structField interface {
+// 注意，规范说可以将拥有相同的属性结构体进行抽象，定义为一种类型约束接口，并可以在泛型程序中操作满足此约束的具体结构体类型的属性。但到1.19尚不支持。
+// 注意，已经支持对多个具有相同属性的结构体类型的约束接口类型的定义。
+type StructWithXfield interface {
 	struct {
-		a int
-		x int
+		A int
+		X int
 	} |
 		struct {
-			b int
-			x float64
+			B int
+			X int
 		} |
 		struct {
-			c int
-			x uint64
+			C int
+			X int
 		}
 }
 
-// IncrementX函数“不正确（INVALID）” .
+//注意，在泛型类型中无法对具有相同属性的结构体类型参数的共性属性进行操作。
+//IncrementX函数“不正确（INVALID）” .
 // 实事上，就算是p.x的返回类型都一样，该函数还是不正确。
 //可能是因为最终的Go语言规范(spec)与提案不一样，
-//可能是Go语言规范考虑到类型集合只定义相同的方法集，而不是字段集。
-/**
-func IncrementX[T structField](p *T) {
+//可能的原因是Go语言规范目前只考虑到类型集合只定义相同的方法集，而不是字段集。
 
-	v := p.x // 不正确: 约束所定义类型集合中的各类型的p.x返回的类型不一样。
-	v++
-	p.x = v
+func IncrementX[T StructWithXfield](p *T) {
+
+	//v := p.X //注意，目前还不支持
+	//v++
+	//p.X = v
 }
-**/
+
 // sliceOrMap is a type constraint for a slice or a map.
+
+// 从提案来看，Entry函数中return c[i]应该允许，因为[]int与map[int]int两个类型都支持整数类型的下标操作，
+// 并且都能返回同样的的类型
+// 但是，实际上的Go语言规范则不允许这样做。因此，return c[i]不允许。
+// https://stackoverflow.com/questions/71198899/how-to-constrain-type-to-types-with-index
+// 提到了这一点：
+// The type parameter proposal suggests that map[int]T could be used in a union with []T,
+// however this has been disallowed.
+// The specs now mention this in Index expressions:
+// "If there is a map type in the type set of P, all types in that type set must be map types,
+//
+//	and the respective key types must be all identical".
+//
+// 翻译： 类型参数提案建议map[int]T 可以与[]T类型组成一个联合约束，但是这一建议被拒绝了。
+// 规范在“Index expressions”中提到：
+// 如果map类型出现在类型集合P中，那么类型集合P中的所有类型都必须是
 type sliceOrMap interface {
 	[]int | map[int]int
 }
 
-//从提案来看，Entry函数中return c[i]应该允许，因为[]int与map[int]int两个类型都支持下标操作，并且都能返回需要的类型
-//但是，实际上的Go语言规范则不允许这样做。因此，return c[i]不允许。
-//https://stackoverflow.com/questions/71198899/how-to-constrain-type-to-types-with-index
-// 提到了这一点：
-//The type parameter proposal suggests that map[int]T could be used in a union with []T,
-//however this has been disallowed.
-//The specs now mention this in Index expressions:
-//"If there is a map type in the type set of P, all types in that type set must be map types,
-//  and the respective key types must be all identical".
-//翻译： 类型参数提案建议map[int]T 可以与[]T类型组成一个联合约束，但是这一建议被拒绝了。
-//规范在“Index expressions”中提到：
-//如果map类型出现在类型集合P中，那么类型集合P中的所有类型都必须是
 func Entry[T sliceOrMap](c T, i int) int {
 	// This is either a slice index operation or a map key lookup.
 	// Either way, the index and result types are type int.
@@ -437,9 +444,9 @@ type integers interface {
 		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
 }
 
-//在泛型函数Convert中，将类型参数运用于显示的类型转换，
+// 在泛型函数Convert中，将类型参数运用于显示的类型转换，
 // 比如，To(from) heFrom（to），是因为To和From的类型集合都是整数类型，
-//而所有的整数类型之间允许类型转换（但会丢失精度数据）。
+// 而所有的整数类型之间允许类型转换（但会丢失精度数据）。
 func Convert[To, From integers](from From) To {
 	to := To(from)        //将类型参数To用于显式的类型转换
 	if From(to) != from { //将类型参数From用于显式的类型转换
@@ -484,8 +491,8 @@ func Add1024[T integers2](s []T) {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////
-//////////通过嵌入约束构成新的类型集合(Type sets of embedded constraints)////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////
+// ////////通过嵌入约束构成新的类型集合(Type sets of embedded constraints)////////////////////
 // Addable 是支持 + 操作符的类型
 type Addable interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
@@ -604,8 +611,8 @@ func TestEmptyTypeSets(t *testing.T) {
 	//pms := ToPointer(ms)
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////无法对于大约类型约束的类型变量进行类型判断,无法精准识别类型（Identifying the matched predeclared type）/////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////无法对于大约类型约束的类型变量进行类型判断,无法精准识别类型（Identifying the matched predeclared type）/////////////////////
 type Float interface {
 	~float32 | ~float64
 }
