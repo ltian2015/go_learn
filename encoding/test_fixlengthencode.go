@@ -3,10 +3,29 @@ package encoding
 import (
 	"encoding/binary"
 	"fmt"
+	"testing"
 )
 
-//把固定长度的int32整数编码为二进制的字节数组\切片([]byte)
-func EncodeInt32() {
+// 原子的无符号整数类型没有减法操作，只有加法操作，所以，要做加法操作需要一个技巧。
+// 这个技巧就是让一个加数的整数减1后按位取反，相当于减去这个加数。
+// ^操作符做一元操作符时，是按位取反操作，即，^n 相当于^作为“异或”二元操作符时，m^n操作，
+// m与n类型相同，所有位都是1的数。异或二元操作的结果是两个数，如果对应的位的值相异（不同），
+// 则结果对应位的值为1，相同为0.
+// 一个位上只有1，0，所以有三种情况：1—1；1-0；0—0,对应的按位计算的操作为：
+//
+//	按位与 &  : 1-1得1，1-0得0，0-0得0
+//	按位或 |  : 1-1得1，1-0得1，0-0得0
+//	按位异或^ : 1-1得0，1-0得1，0-0得1
+//
+// 把固定长度的int32整数编码为二进制的字节数组\切片([]byte)
+func TestMaxInt(t *testing.T) {
+	const maxint64 int64 = 1<<63 - 1    //符号位为0，其他位为1，即：+9223372036854775807
+	const minint64 int64 = ^(1<<63 - 1) //符号位为1，其他位为0，即：-9223372036854775807
+	println(maxint64)
+	println(minint64)
+
+}
+func TestEncodeInt32(t *testing.T) {
 	v := uint32(500)
 	fmt.Printf("数字500的二进制为：%b\n", v)
 	fmt.Printf("数字500的16进制为：%X\n", v)
@@ -32,8 +51,8 @@ func EncodeInt32() {
 	binary.LittleEndian.PutUint32(littleEndianBuf2, v)
 }
 
-//这个函数把字节数组解码为int32数字。
-func DecodeInt32() {
+// 这个函数把字节数组解码为int32数字。
+func TestDecodeInt32(t *testing.T) {
 	var buf1 = make([]byte, 4)
 	buf1[0] = 0
 	buf1[1] = 0
