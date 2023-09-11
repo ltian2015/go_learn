@@ -899,7 +899,7 @@ func (discard) WriteString(s string) (int, error) {
 // !!! 之所以使用sync.Pool来缓存这个黑洞是因为sync.Pool可以保证多线程下的get操作
 var blackHolePool = sync.Pool{
 	New: func() any {
-		b := make([]byte, 8192) // !!!“黑洞”是一个8k大小的切片,8k是操作系统逻辑内存块的大小。
+		b := make([]byte, 8192) // !!!“黑洞”是一个8k大小的切片,8k是UFS文件系统逻辑块（数据页）的默认大小。
 		return &b
 	},
 }

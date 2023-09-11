@@ -5,8 +5,8 @@ Poos是一系列可以被单独存储和获取的临时对象。
 
 Any item stored in the Pool may be removed automatically at any time without notification.
 If the Pool holds the only reference when this happens, the item might be deallocated.
-在Pool中存储的任何事物(item)都可以在任何时候被自动移除，而没有通知。当这种情况发生时，如果Pool持有了该事物（item）
-的唯一引用，那么这个事物（item)就会被释放（deallocated）
+在Pool中存储的任何事物(item)都可以在任何时候被自动移除，而没有通知。如果Pool持有了该事物（item）
+的唯一引用就会发生这种情况。当这种情况发生时,这个事物（item)就会被释放（deallocated）
 A Pool is safe for use by multiple goroutines simultaneously.
 在多个goroutines同时使用时，Pool是安全的。
 
@@ -33,7 +33,7 @@ actively printing) and shrinks when quiescent.
 On the other hand, a free list maintained as part of a short-lived object is not a suitable
 use for a Pool, since the overhead does not amortize well in that scenario.
 It is more efficient to have such objects implement their own free list.
-另一方面，作为短期存活对象的一部分而维护的自由列表不适合用于Pool，因为在那个场景中开销（overhead）不会被
+另一方面，作为短期存活对象的一部分而维护的自由列表不适合使用Pool，因为在那个场景中开销（overhead）不会被
 很好地分摊（amortize）。
 
 A Pool must not be copied after first use.
@@ -51,6 +51,7 @@ package basic
 import (
 	"bytes"
 	gzip "compress/gzip"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -202,4 +203,27 @@ func BenchmarkHeapAlloc(b *testing.B) {
 		println(uint8(vi))
 	}
 	allocloop(b, rcow, &heap{})
+}
+func TestPoolBiehavior(t *testing.T) {
+	//定义被存储在内存池中的值的类型。
+	type Person struct {
+		Name string
+	}
+
+	var pool *sync.Pool = &sync.Pool{
+		New: func() interface{} {
+			fmt.Println("creating a new person")
+			return new(Person)
+		},
+	}
+
+	person := pool.Get().(*Person)
+	fmt.Println("Get Pool Object 1：", person)
+
+	person.Name = "first"
+	pool.Put(person)
+
+	fmt.Println("Get Pool Object 2 ：", pool.Get().(*Person))
+	fmt.Println("Get Pool Object 3：", pool.Get().(*Person))
+
 }

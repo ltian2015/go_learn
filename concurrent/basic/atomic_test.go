@@ -32,7 +32,8 @@ func TestUintSub(t *testing.T) {
 	var b uint = 10
 	c := a + ^(b - 1)
 	d := a - b
-	println(c, d, c == d)
+	e := a + ^b + 1
+	println(c, d, e, c == d)
 }
 func TestNoAutomicAdd(t *testing.T) {
 	var number int = 0

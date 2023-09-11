@@ -43,6 +43,9 @@ func TestSectionReader(t *testing.T) {
 	println("读取了", n, "个字节为：", string(buf))
 
 }
+func TestTeeReader(t *testing.T) {
+
+}
 
 func TestBufferOp(t *testing.T) {
 	buf := make([]byte, 0, 4096)
@@ -53,4 +56,9 @@ func TestBufferOp(t *testing.T) {
 	println("len=", len(buf), " cap=", cap(buf))
 	buf = append(buf, 1)[:len(buf)]
 	println("len=", len(buf), " cap=", cap(buf))
+	io.MultiReader()
+	io.Pipe()
+	io.MultiWriter()
 }
+
+

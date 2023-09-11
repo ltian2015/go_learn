@@ -335,21 +335,42 @@ func TestCompositeTypeGeneric(t *testing.T) {
 	println(s)
 }
 
-// 注意，规范说可以将拥有相同的属性结构体进行抽象，定义为一种类型约束接口，并可以在泛型程序中操作满足此约束的具体结构体类型的属性。但到1.19尚不支持。
+// 注意，规范说可以将拥有相同的属性结构体进行抽象，定义为一种类型约束接口，
+// 注意，并可以在泛型程序中操作满足此约束的具体结构体类型的属性。但到1.19尚不支持。
 // 注意，已经支持对多个具有相同属性的结构体类型的约束接口类型的定义。
+type SAX struct {
+	A int
+	X int
+}
+
+func (s *SAX) GetX() int {
+	return s.X
+}
+
+type SBX struct {
+	B int
+	X int
+}
+
+func (s *SBX) GetX() int {
+	return s.X
+}
+
+type SCX struct {
+	C int
+	X int
+}
+
+func (s *SCX) GetX() int {
+	return s.X
+}
+
+type HasGetXMethod interface {
+	GetX() int
+}
 type StructWithXfield interface {
-	struct {
-		A int
-		X int
-	} |
-		struct {
-			B int
-			X int
-		} |
-		struct {
-			C int
-			X int
-		}
+	SAX | SBX | SCX
+	GetX() int
 }
 
 //注意，在泛型类型中无法对具有相同属性的结构体类型参数的共性属性进行操作。
@@ -358,11 +379,11 @@ type StructWithXfield interface {
 //可能是因为最终的Go语言规范(spec)与提案不一样，
 //可能的原因是Go语言规范目前只考虑到类型集合只定义相同的方法集，而不是字段集。
 
-func IncrementX[T StructWithXfield](p *T) {
+func IncrementX[T StructWithXfield](p T) {
 
-	//v := p.X //注意，目前还不支持
-	//v++
-	//p.X = v
+	v := p.GetX() //注意，目前还不支持
+	v++
+	p.X = v
 }
 
 // sliceOrMap is a type constraint for a slice or a map.
