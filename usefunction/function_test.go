@@ -10,15 +10,15 @@ import (
 
 /****************************************************************************
 知识点1:什么是函数类型、函数值与函数原型？
-	从GO语言的类型系统的角度看，函数也是GO语言所支持的“类型”之一，与其他类型地位完全一样。
+	!!! 从GO语言的类型系统的角度看，函数也是GO语言所支持的“类型”之一，与其他类型地位完全一样。
 	因此，函数有类型，也有值，完全可以像使用其他类型一样，将函数作为另外一个函数的参数或者返回值。
-	函数类型：是一种“组合类型”，也就是“字面类型”。具体而言 ，
+	!!!函数类型：是一种“组合类型”，也就是“字面类型”。具体而言 ，
 		它是由 func 关键字 + 字面的函数签名（ function signature literal）  组合而成，
 		而字面的函数签名（ function signature literal）则是由 “输入参数类型列表” 与“结果类型列表”组合而成。
 		在实际运用上，可以将func 关键字 + 字面的函数签名看作是函数签名，因此，函数类型就是函数签名。
-	函数原型（function prototype）：是指具体函数声明中除去函数体的部分。也就是 func关键字+ 函数名+ 函数签名。
+	!!! 函数原型（function prototype）：是指具体函数声明中除去函数体的部分。也就是 func关键字+ 函数名+ 函数签名。
 
-	函数值：是程序中，函数签名（函数类型）加上函数体的字面量或字面值。 当我们声明一个自定义函数的时候，
+	!!! 函数值：是程序中，函数签名（函数类型）加上函数体的字面量或字面值。 当我们声明一个自定义函数的时候，
 		实际上也声明了一个“不可变的函数值（函数值常量）”。 这个函数值的标识符是函数名，其类型是函数原型去掉函数名的字面类型。
 		需要注意的是，系统内建函数不能当作函数值。init函数也不能当作函数值。
 
@@ -42,8 +42,8 @@ var f3 func(x int, _ string, z string) (int, int, bool)
 var f4 func(int, string, string) (x int, y int, z bool)
 var f5 func(int, string, string) (a int, b int, _ bool)
 
-//func f6(a int, b string, c string) (int, int, bool)则是一个函数原型(prototype)
-//函数f6是一个函数值常量
+// func f6(a int, b string, c string) (int, int, bool)则是一个函数原型(prototype)
+// 函数f6是一个函数值常量
 func f6(a int, b string, c string) (int, int, bool) {
 	var bLen = len(b)
 	var cLen = len(c)
@@ -97,7 +97,7 @@ func TestFuncTypeAndVariable(t *testing.T) {
 
 //func SumImplAssebmly(x, y int64) int64 //函数体在funciplByAssembly.a文件中用go汇编实现。
 
-//函数f示例用来表明函数参数以及函数体中其他局部变量的作用域。
+// 函数f示例用来表明函数参数以及函数体中其他局部变量的作用域。
 func f(x, y int) (sum int) {
 
 	var (
@@ -117,7 +117,7 @@ func f(x, y int) (sum int) {
 	return
 }
 
-//下列函数可以重名
+// 下列函数可以重名
 func init() {
 	println("自动调用的初始化函数1")
 }
@@ -135,16 +135,16 @@ func _() {
 3.函数的调用。
   我们所说的函数调用实际就是函数值的使用或者求值（evaluate），函数调用可以看作为对函数值的操作。
   需要注意以下几点：
-  1. 通常函数调用或求值发生在go程序运行期间，但是unsafe包中的函数求值或者调用发生在编译期间，也就是
-  在编译程过程中，被运行的编译器所调用求值。因此，unsafe包中的函数看作常量，可以用于常量表达式定义之中。
-  而，有些内置函数，比如 len 和 cap函数既可能在运行时求值，也可能在编译时求值,取决于函数的
-  输入参数是否可以在编译期求值。
+  !!! 1. 通常函数调用或求值发生在go程序运行期间，但是unsafe包中的函数求值或者调用发生在编译期间，也就是
+  !!! 在编译程过程中，被运行的编译器所调用求值。因此，unsafe包中的函数看作常量，可以用于常量表达式定义之中。
+  !!!而，有些内置函数，比如 len 和 cap函数既可能在运行时求值，也可能在编译时求值,取决于函数的
+  !!! 输入参数是否可以在编译期求值。
 
-  2.函数调用时的参数值传递属于“赋值（value assignments）” 。所以赋值时都是
-值的拷贝，所以对于指针和包含了指针的引用类型就必须要注意，函数的操作可能会修改指向或引用的真实数据。
+  !!! 2.函数调用时的参数值传递方式是“赋值（value assignments）传递” 。所以函数调用时都是拷贝传值，
+        如果想要函数改变数据，就必须传递指针。所以对于指针和包含了指针的引用类型就必须要注意，函数的操作可能会修改指向或引用的真实数据。
 *******************************************************************************************/
 
-//一个普通的函数，在运行时求值。
+// 一个普通的函数，在运行时求值。
 func getIntSize() uint {
 	var i int = 0
 	return uint(unsafe.Sizeof(i))
@@ -174,7 +174,7 @@ func doSum(a, b int) (int, bool) {
 	return a + b, true
 }
 
-//测试函数结果的抛弃情况
+// 测试函数结果的抛弃情况
 func TestFuncResultDiscard(t *testing.T) {
 	_, ok := doSum(2, 3) //抛弃第一个返回结果
 	_ = ok
@@ -191,7 +191,7 @@ func TestFuncResultDiscard(t *testing.T) {
 	_ = len(str) //不可以抛弃的函数结果可以赋值给匿名变量 _
 }
 
-//下列函数都是采用了异常终结方式，没有正常的返回值，所以返回值可以写成任何类型，都不会有编译错误。
+// 下列函数都是采用了异常终结方式，没有正常的返回值，所以返回值可以写成任何类型，都不会有编译错误。
 func fa1() int {
 	panic("error") //异常终结。
 }
@@ -268,9 +268,9 @@ type score struct {
 
 // An action transitions stochastically to a resulting score.
 
-//go函数式编程的特点展示1:
-//下面的函数还有一个特点就是对返回的结果参数进行了命名。这里的result和turnIsOver就是命名的返回结果。
-//同时，g函数还可以一个函数可以返回多个值
+// go函数式编程的特点展示1:
+// 下面的函数还有一个特点就是对返回的结果参数进行了命名。这里的result和turnIsOver就是命名的返回结果。
+// 同时，g函数还可以一个函数可以返回多个值
 type action func(current score) (result score, turnIsOver bool)
 
 // roll returns the (result, turnIsOver) outcome of simulating a die roll.
@@ -288,14 +288,14 @@ func roll(s score) (score, bool) {
 
 // stay returns the (result, turnIsOver) outcome of staying.
 // thisTurn score is added to the player's score, and the players' roles swap.
-//stay 函数也是action类型的一个实例。可以赋值给action类型的变量
+// stay 函数也是action类型的一个实例。可以赋值给action类型的变量
 func stay(s score) (score, bool) {
 	return score{s.opponent, s.player + s.thisTurn, 0}, true
 }
 
 // A strategy chooses an action for any given score.
 
-//函数式编程特点展示3: 高阶函数，一个函数可以输出另一个函数。
+// 函数式编程特点展示3: 高阶函数，一个函数可以输出另一个函数。
 type strategy func(score) action
 
 // stayAtK returns a strategy that rolls until thisTurn is at least k, then stays.
@@ -314,7 +314,7 @@ func stayAtK(k int) strategy {
 
 // play simulates a Pig game and returns the winner (0 or 1).
 
-//函数式编程特点展示4: 把具体的函数（值）当作参数来传递。
+// 函数式编程特点展示4: 把具体的函数（值）当作参数来传递。
 func play(strategy0, strategy1 strategy) int {
 	strategies := []strategy{strategy0, strategy1}
 	var s score
@@ -353,7 +353,7 @@ func roundRobin(strategies []strategy) ([]int, int) {
 // each value and its percentage of the sum of all values.
 // e.g., ratios(1, 2, 3) = "1/6 (16.7%), 2/6 (33.3%), 3/6 (50.0%)"
 
-//函数式编程特点展示5: 函数可以接受可变数量的输入参数。
+// 函数式编程特点展示5: 函数可以接受可变数量的输入参数。
 func ratioString(vals ...int) string {
 	total := 0
 	for _, val := range vals {

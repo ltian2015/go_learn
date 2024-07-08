@@ -1,7 +1,6 @@
-package controlflow
+package normal
 
 import "testing"
-
 
 func TestThePkg(t *testing.T) {
 	//TestFor(t)

@@ -57,7 +57,7 @@
 // various implementations, unless otherwise informed clients should not
 // assume they are safe for parallel execution.
 
-// !!! 因为这些接口和原语分那个装了各种不同实现的低级操作，除非是熟知客户端，
+// !!! 因为这些接口和原语封装了各种不同IO实现方式的低级操作，除非是熟知客户端，
 // !!! 否则不能假定并行执行这些操作是安全的
 package goio
 

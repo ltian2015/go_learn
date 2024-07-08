@@ -4,7 +4,7 @@ package usefunction
 函数（行为）与数据绑定，此时，函数就是一种带有“接收者（reciever）”的特殊函数，
 这种函数也称之为接收器的方法，即：method。这就是GO语言中对面向对象编程的支持方式。
 函数与数据的绑定方式有两种：
-1. ，也就是绑定指针，就是把指向数据的指针作为函数的接收器（receiver）。
+1. 绑定到数据引用，也就是绑定指针，就是把指向数据的指针作为函数的接收器（receiver）。
 2. 绑定到数据值，就是以数据值作为函数的接受者(receiver).
 GO语言中，行为与数据的两种绑定方式可以分别用来实现对象的成员方法和纯函数的不可变编程。
 需要注意的是：
@@ -34,12 +34,12 @@ https://medium.com/@annapeterson89/whats-the-point-of-golang-pointers-everything
    指针值或引用值。
 
 使用方法需要注意的是：
-1.（*****）如果一个符合某个接口形式的函数绑定所接收者是某个结构体的指针类型，
-那么，在go中这个结构体的指针类型是一种新的类型，编译器认为是这个结构体的指针类型实现了接口，
-而不是结构体类型实现了该接口。
+1.!!!*****如果符合某个接口形式的函数绑定所接收者是某个结构体的指针类型，
+  !!! 那么，在go中这个结构体的指针类型是一种新的类型，编译器认为是这个结构体的指针类型实现了接口，
+  !!! 而不是结构体类型实现了该接口。
 
 2. 无论方法的接收者类型被定义为普通变量还是指针变量，在调用该方法时，
-使用普通变量还是指针变量都可以调用该方法，go编译器自动完成了普通变量与指针变量之间的转换。
+   使用普通变量还是指针变量都可以调用该方法，go编译器自动完成了普通变量与指针变量之间的转换。
 **/
 
 type Student struct {
@@ -47,14 +47,14 @@ type Student struct {
 	Name string
 }
 
-//结构体的成员方法（Method Member），因为拷贝传递过来的是指针，通过指针操作会改变所指向的结构体的内容。
-//注意：即使用的不是指针而是变量来调用该函数，也不会改变它是成员方法的语义，
-//GO编译器会自动完成接收器变量与指针之间的转换。
-//此时，GO会先自动取变量的地址创建指针，然后再用指针作为参数调用该方法,比如：
+// 结构体的成员方法（Method Member），因为拷贝传递过来的是指针，通过指针操作会改变所指向的结构体的内容。
+// 注意：即使用的不是指针而是变量来调用该函数，也不会改变它是成员方法的语义，
+// GO编译器会自动完成接收器变量与指针之间的转换。
+// 此时，GO会先自动取变量的地址创建指针，然后再用指针作为参数调用该方法,比如：
 // var s Student=Student{ID:1,name:"lantian"}
 // s.changeNameMehod(”ltian“)  //等价于
 // (&s).s.changeNameMehod(”ltian“)
-//GO 自动取地址，生成指针进行调用。
+// GO 自动取地址，生成指针进行调用。
 // s,函数的接收者(receiver)，这里是个指针，意味着，本函数是一个改变接受者数据的成员方法。
 func (s *Student) changeNameMethod(name string) {
 	s.Name = name
@@ -62,19 +62,21 @@ func (s *Student) changeNameMethod(name string) {
 
 // 纯函数风格，拷贝传递过来的Student结构体，并命名为s，改变并返回拷贝后的结构体，
 // 该函数不会对原结构体有任何的改变，所以是纯函数风格。
-//注意：即使使用的是指针而不是结构体变量来调用该函数，也不会改变它是存函数的语义。
-//此时GO会先用指针找到所指向的Student变量，拷贝Student变量，然后再用该拷贝的Student对象调用该方法，比如：
+// 注意：即使使用的是指针而不是结构体变量来调用该函数，也不会改变它是纯函数的语义。
+// 此时GO会先用指针找到所指向的Student变量，拷贝Student变量，然后再用该拷贝的Student对象调用该方法，比如：
 // var s Student=Student{ID:1,name:"lantian"}
 // sp:=&s
 // sp.changeNameMehod(”ltian“)  //等价于
-//  (*sp).changeNameMehod(”ltian“)
-//s,函数的接收者(receiver)，这里是一个数据值，意味着，本函数是一个不改变接收这数据的纯函数。
+//
+//	(*sp).changeNameMehod(”ltian“)
+//
+// s,函数的接收者(receiver)，这里是一个数据值，意味着，本函数是一个不改变接收这数据的纯函数。
 func (s Student) changeNameFunction(name string) Student {
 	s.Name = name
 	return s
 }
 
-//测试结构体的成员方法与纯函数风格。
+// 测试结构体的成员方法与纯函数风格。
 func DataBandingTest() {
 	var s1 Student = Student{ID: 1, Name: "lantian"}
 	var s2 Student = Student{ID: 2, Name: "lan lan"}
@@ -92,18 +94,18 @@ func DataBandingTest() {
 	println("s2_2 : Student{", s2_2.ID, ",", s2_2.Name, "} @ ", &s2_2)
 }
 
-//函数可以绑定到处理基础类型和未命名类型之外的任何数据类型上，包括整数类型、字符串类型以及另一个函数类型。
+// 函数可以绑定到处理基础类型和未命名类型之外的任何数据类型上，包括整数类型、字符串类型以及另一个函数类型。
 type MyInt int
 
-//函数绑定到指针类型的数据上，注意，不是绑定到MyInt上，MyInt和*MyInt不是同一个类型。如果
-//isPositive() 函数是某个接口的唯一方法，那么是 *MyInt类型实现该接口，而不是MyInt实现了该接口。
+// 函数绑定到指针类型的数据上，注意，不是绑定到MyInt上，MyInt和*MyInt不是同一个类型。如果
+// isPositive() 函数是某个接口的唯一方法，那么是 *MyInt类型实现该接口，而不是MyInt实现了该接口。
 func (i *MyInt) isPositive() bool {
 	return int(*i) > 0
 }
 
 type StringHandler func(s string) string
 
-//绑定到了函数类型
+// 绑定到了函数类型
 func (sh *StringHandler) printHandleResult(s string) {
 	result := (*sh)(s)
 	println(result)

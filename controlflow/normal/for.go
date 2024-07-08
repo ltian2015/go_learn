@@ -18,7 +18,7 @@ go的自动化自测试工具go testd对被测试的文件与函数的命名约�
 controlflow包主要学习for,if,switch等三个用于控制程序执行分支的语句。
 *
 */
-package controlflow
+package normal
 
 /**
 本文件演示了for循环的几种用法，以及如何用标签实现嵌套循环的灵活终止控制。

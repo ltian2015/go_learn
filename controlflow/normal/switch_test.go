@@ -1,4 +1,4 @@
-package controlflow
+package normal
 
 import (
 	"fmt"

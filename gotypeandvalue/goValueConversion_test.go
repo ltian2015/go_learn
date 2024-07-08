@@ -151,8 +151,9 @@ func TestSameTypeConvert(t *testing.T) {
 		但是以未定义的指针类型为底层类型的已定义类型（defined type）类型，由于
 		还可以定义自己的方法集，为了避免误操作（方法的乱用），必须显示地从其底层的指针类型转换过来。
 
-	!!! 总之，只有当两个类型的底层类型相关，且二者之间有一个类型是“字面类型（指针类型与Struct类型有部分例外）”
-	!!! 才允许隐式类型转换（直接赋值），否则，必须进行显式类型转换。
+	!!! 总之，两个类型的底层类型相同，也就是内存格式相同是可以进行类型转换的前提。
+	!!! 只有不存在方法集切换导致的方法滥用隐患的时候，才会允许隐式转换（直接切换），否则必须显式地转换类型。
+	!!! 方法集滥用时导致误程序Bug的重要因素。
 ***/
 //------------------------与底层类型相关的转换规则的练习，begin----------------------------------//
 func TestUnderlyinngTypeSameConvert(t *testing.T) {
@@ -209,11 +210,11 @@ func TestUnderlyinngPointerTypeConvert(t *testing.T) {
 	type IntPtrType *int                         //IntPtrType类型的底层类型为 *int，虽然内存布局相同，但二者方法集完全不同，*int指针类型所指向类型的底层类型是int
 	type MyIntPtrType *MyIntType                 //MyIntPtr的底层类型为*MyIntType，虽然内存布局相同但二者方法集完全不同。*MyIntType指针类型所指向类型的底层类型是int
 	var undefYip *YourIntType = new(YourIntType) //undefYip的类型是是未定义的指针类型*YourIntType，指针所指向的YourIntType类型的底层类型是int，因此可以与任何指向以int为底层类型的未定义指针类型进行显式转换。
-	var pi *int = new(int)                       //pi 类型是*int，属于未定义类型(undefined type).
+	var pi *int = new(int)                       //!!! pi 类型是字面类型 *int，IntPtrType的底层类型 *int,存在转换的可能，由于字面类型 *int的方法集为空，所以可以安全地进行隐式转换。
 	var ipt IntPtrType = pi                      // ipt类型已定义类型IntPtrType，其底层类型是*int，与未定义类型*int可以相互地隐式地转换。
 	var _ = ipt
 
-	var undefMip *MyIntType = (*MyIntType)(pi) //undefMip的类型是未定义的指针类型*MyIntType，指针所指向的MyIntType类型的底层类型是int，因此可以与任何志向以int为底层类型的未定义指针类型进行显式转换。
+	var undefMip *MyIntType = (*MyIntType)(pi) //!!!虽然MyIntType的底层类型是int，但 *MyIntType类型的方法集与*int的方法集可能不一样。
 	undefMip = (*MyIntType)(undefYip)          //两者都是未定义指针，但是各自所指向类型的底层都是int，故此，可以相互转换。
 	var defMip = MyIntPtrType(undefMip)
 	defMip = MyIntPtrType((*MyIntType)(undefYip)) //经过间接的显式转换，确保程序员了解到类型方法集的切换。

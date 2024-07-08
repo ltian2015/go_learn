@@ -1,8 +1,11 @@
 package goio
 
 import (
+	"bufio"
+	"encoding/binary"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"os"
 	"strings"
 	"testing"
@@ -61,4 +64,69 @@ func TestBufferOp(t *testing.T) {
 	io.MultiWriter()
 }
 
+func generateDataFile(size, dataRange int, fileName string) (int, error) {
+	const BUFFER_SIZE int = 256
+	f, err := os.Create(fileName)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+	buffer := make([]byte, 0)
+	bufferCounts := size / BUFFER_SIZE
+	leftBufferSize := size - BUFFER_SIZE*bufferCounts
+	var fileSize int = 0
+	for i := 0; i < bufferCounts; i++ {
+		for j := 0; j < BUFFER_SIZE; j++ {
+			ri := rand.IntN(dataRange)
+			buffer = binary.AppendVarint(buffer, int64(ri))
+		}
+		nw, err := f.Write(buffer)
+		buffer = buffer[:0] //清空buffer，保留内存
+		if err != nil {
+			return fileSize, err
+		}
+		fileSize += nw
+	}
+	if leftBufferSize > 0 {
+		var leftBuffer []byte = make([]byte, 0)
+		for i := 0; i < leftBufferSize; i++ {
+			ri := rand.IntN(dataRange)
+			leftBuffer = binary.AppendVarint(leftBuffer, int64(ri))
+		}
+		nw, err := f.Write(leftBuffer)
+		if err != nil {
+			return fileSize, err
+		}
+		fileSize += nw
+	}
+	return fileSize, nil
+}
+func readIntDataFile(fileName string) ([]int, error) {
+	f, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	buf := make([]int, 0)
+	r := bufio.NewReader(f)
+	for x, err := binary.ReadVarint(r); err != io.EOF || err == nil; x, err = binary.ReadVarint(r) {
+		buf = append(buf, int(x))
+	}
+	return buf, nil
 
+}
+
+func TestWriteThenReadFile(t *testing.T) {
+	const NUMBERS = 1024 * 1024 * 100
+	const RANGE = 1024 * 1024
+	n, err := generateDataFile(NUMBERS, RANGE, "test.data")
+	if err == nil {
+		fmt.Printf("file size is  %d bytes,contains %d int numbers \n", n, NUMBERS)
+	}
+	intNumbs, err := readIntDataFile("test.data")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("read %d int numbers from file \n", len(intNumbs))
+}

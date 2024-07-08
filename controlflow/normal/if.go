@@ -1,4 +1,4 @@
-package controlflow
+package normal
 
 /**
 本文件主要演示if语句的用法。

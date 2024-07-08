@@ -40,12 +40,15 @@ import (
 	_ "com.example/golearn/usefunction"
 )
 
-// init()函数是一个特殊函数，用来完成包的初始化（变量初始化、验证与校验）。其特殊之处有两点：
+// init()函数是一个特殊函数，用来完成包的初始化（全局变量初始化、验证与校验）。其特殊之处有两点：
 // 1.自动执行。当包及所依赖包的变量都被初始化之后，就会自动调用init函数。
 // 2. 该函数具有游动性质，可以在包中的一个文件或多个文件中多次按需出现。
 // GO程序的初始化运行在一个单独的goroutine中(主goroutine中)，但是该goroutine可以创建其他的goroutines，
-// 而这些goroutines可以并发运行。
+// 而这些goroutines可以并发运行。不过，在初始化函数中所在的goroutine中开始并行的goroutine不是一个好的实践
+
 // 如果package p 引入了（imports）package q, 则q的init函数的完成要发生在p的任何init函数之前。
+// 如果package p 中有多个文件含所有init()函数，那么按照文件名的字母先后顺序执行init函数，当然，一个包有多个
+// 文件含有init函数不是一个好习惯。
 // 所有的init函数的完成都“同步先于”main.main函数的启动。
 // 这个初始化函数用来验证是否已经登录。登录操作在login.go文件的init()函数中完成。
 func init() {
@@ -72,7 +75,7 @@ func init() {
 
 // main包中的main()函数是特殊函数，它可执行程序的“入口点”。
 // 注意，只有main包中的main()函数才是可执行程序的“入口点”。
-// 其他非main包中也可以有main()函数，但非main包中的main()函数只是一个普通的函数。
+// 注意，其他非main包中也可以有main()函数，但非main包中的main()函数只是一个普通的函数。
 // 作为入口点的main()函数所在的文件名未必一定命名为main.go,也可以是其他文件名，比如entrypoint.go
 func main() {
 	println("main function has started....")

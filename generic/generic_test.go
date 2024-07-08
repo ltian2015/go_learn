@@ -383,7 +383,7 @@ func IncrementX[T StructWithXfield](p T) {
 
 	v := p.GetX() //注意，目前还不支持
 	v++
-	p.X = v
+	//p.X = v
 }
 
 // sliceOrMap is a type constraint for a slice or a map.
