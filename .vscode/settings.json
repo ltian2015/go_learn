@@ -35,5 +35,6 @@
             "background": "#002db3",
             "gutterIcon": true,
         }
-    }
+    },
+    "editor.fontSize": 14
 }

@@ -9,7 +9,7 @@ import (
 
 /*******************************************************************************************
 1. 什么是类型（Type），类型有什么用途？如何定义？
-类型（Types）确定了一组值（value——常量或变量）的集合，这组值的内存布局，
+类型（Types）确定了一组值（value——常量或变量）的集合，定义了这组值的内存布局，
 以及用于值集合中这些值的操作（operations）与方法（methods），也就是方法集。
 
 可以说，“类型（Type）”是对性质相同的值或量的归纳与抽象。而“泛型(Generic Type)”则是对性质相同的类型的归纳与抽象。
@@ -26,7 +26,7 @@ Go语言预定义了若干具有确定内存格式与大小的“基本类型（
 通过源类型衍生新类型方式是通过以下语法：
         type NewType SourceType
 SourceType可以是基本类型，基本类型的组合类型，也可以是通过 type 关键字声明的其他衍生类型。
-注意：新定义的类型NewType与源类型SourceType是两个完全不同的类型，二者之前除了共享相同的底层类型外，
+注意：新定义的类型NewType与源类型SourceType是两个完全不同的类型，二者之前除了共享相同的底层类型（underlying type）外，
 再无其他关系，也就是说新类型除了通过SourceType推导出底层类型，从而决定所属类型值的内存布局之外，
 与SourceType再没有任何瓜葛，二者之前相互不共享、不继承“操作”与“方法”的集合。
 
@@ -110,14 +110,14 @@ type C = []string //C是"未经定义类型"，或者“字面类型”[]string�
 
 // 下面语句用来声明各种已定义类型（GO1.9之前的命名类型）
 type MyStringType string
-type Person struct { //这里使用了未命名类型，也就是“字面类型”struct {Id int64,Name string}作为命名类型 Person的底层类型。
+type Person struct { // 这里使用了未命名(未定义)类型，也就是“字面类型”struct {Id int64,Name string}作为命名类型 Person的源类型（source type）。
 	Id   int64
 	Name string
 }
-type Printer interface { //这里使用了未命名类型，也就是“字面类型”nterface {...}作为命名类型Printer的底层类型。
+type Printer interface { //这里使用了未命名（未定义）类型，也就是“字面类型”nterface {...}作为命名类型Printer的源类型（source type）。
 	Print(data interface{}) (bool, error)
 }
-type StringSlice []string //这里使用了未命名类型，也就是“字面类型” []string作为命名类型StringSlice的底层类型。
+type StringSlice []string //这里使用了未命名（未定义）类型，也就是“字面类型” []string作为命名类型StringSlice的底层类型。
 func TestShowUnderlyingType(t *testing.T) {
 	var p = Person{Id: 1, Name: "Lantian"}
 
@@ -125,15 +125,19 @@ func TestShowUnderlyingType(t *testing.T) {
 
 }
 
-// 下面使用“未经定义类型”，即，"字面类型(Type literal)"，也就是Go1.9之前的“未命名类型(Unnamed Type)”，来定义（define）变量。
+// 下面使用“未定义类型”，即，"字面类型(Type literal)"，也就是Go1.9之前的“未命名类型(Unnamed Type)”，来定义（define）变量。
 // 注意：变量的定义要为变量分配内存空间，而声明变量则不要分分配内存空间，只是告诉编译器，存在一个某种类型的变量的标识符。
 var unDefinedTypeVar1 []string //这是一种常见的方式，使用未命名类型，也就是类型字面量定义了一个字符串切片类型的变量。
-
-var unDefinedTypeVar2 struct { // 这是一种不常见变量定义方式，往往以struct{...} 为底层类型的类型都是命名类型。
+// !!!这里直接用字面类型(未定义类型)struct{...} 来定义变量的类型，
+// !!! 使用字面类型定义变量是一种不常见变量定义方式，需要每次用到同样类型是都需要再次完整地书写一遍
+var unDefinedTypeVar2 struct {
 	Id   int64
 	Name string
 }
-var unDefinedTypeVar22 = struct { // 这是一种不常见的结构体变量定义并赋初值的方式，往往以struct{...} 为底层类型的类型都是命名类型。
+
+// 这是一种不常见的结构体变量定义并赋初值的方式，
+// !!!先初始化了一个未定义类型（字面类型）struct{...}的未命名变量（字面量），然后将其赋值给命名变量unDefinedTypeVar22。
+var unDefinedTypeVar22 = struct {
 	Id   int64
 	Name string
 }{
@@ -181,8 +185,10 @@ func TestUseUnnamedTypeVar(t *testing.T) {
 	每个类型都有一个方法集（可能为空）与之相关。
 	类型方法集的定义：必须是与已定义类型（defined type）在同一个包中（方便编译器搜寻类型的方法集），以该类型
 	作为“接收者”参数的函数就是类型的方法集。
-	注意，未经定义的类型（类型字面量）或等价的别名类型都不能定义方法集。因为类型字面量可以在任何包中随处写。
+	注意，未经定义的类型（字面类型）或等价的别名类型都不能定义方法集。因为类型字面量可以在任何包中随处写。
 	编译器无法确定其方法集到底包含多少个函数，故而只允许为已定义类型定义方法集。
+	!!! 由于未定义类型（字面类型）的方法集为空，所以其变量之间相互赋值是（操作）安全的，同理，
+	!!! 也由于未定义类型（字面类型）
 	在类型的方法集中，每个方法都必须有一个唯一的“非空格（non-blank）”的方法名。
 
 	类型的方法集的用途主要是用于决定类型所实现的接口（用于多态），并且方法集中的方法可以使用该类型的接受者实例进行调用。
