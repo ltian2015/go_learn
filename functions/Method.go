@@ -1,4 +1,4 @@
-package usefunction
+package functions
 
 /**
 函数（行为）与数据绑定，此时，函数就是一种带有“接收者（reciever）”的特殊函数，

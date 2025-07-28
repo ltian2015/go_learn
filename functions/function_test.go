@@ -1,4 +1,4 @@
-package usefunction
+package functions
 
 //这个文件写了一个拱猪游戏的实现，用来展示函数式编程的特点。
 import (

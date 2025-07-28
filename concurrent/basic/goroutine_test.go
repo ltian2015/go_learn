@@ -56,14 +56,14 @@ func TestHugeNumGortouineInRunning(t *testing.T) {
 	//这里使用WaitGroup等待所有goroutine全部到来，然后一起执行。类似于java的并发库中的关卡。
 	wg.Add(goroutineCount)
 	for i := 0; i < goroutineCount; i++ {
-		go func() {
+		go func(v int) {
 			wg.Done()  //创建一个线程，等待数量就减少1个
 			wg.Wait()  //等待所有goroutine创建完毕再同时执行。
-			j := i * i //执行一次平方计算
+			j := v * v //执行一次平方计算
 			_ = j
 			//time.Sleep(10 * time.Nanosecond)
 
-		}()
+		}(i)
 	}
 	//主goroutine会一直以非阻塞的方式等待另一个线程的完成。
 	//这是一种非阻塞式的协程等待方式，它不会一直占用CPU资源的自旋锁(spin lock)。

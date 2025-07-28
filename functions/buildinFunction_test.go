@@ -1,4 +1,4 @@
-package usefunction
+package functions
 
 import (
 	"testing"

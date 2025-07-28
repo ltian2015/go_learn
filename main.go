@@ -37,7 +37,7 @@ import (
 	"sync"
 	"time"
 
-	_ "com.example/golearn/usefunction"
+	_ "com.example/golearn/functions" //!!!该包暂时不使用，但是先导入
 )
 
 // init()函数是一个特殊函数，用来完成包的初始化（全局变量初始化、验证与校验）。其特殊之处有两点：

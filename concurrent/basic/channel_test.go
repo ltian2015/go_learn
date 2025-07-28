@@ -99,6 +99,8 @@ func TestWithBufferedChannel(t *testing.T) {
 }
 
 /**知识点4:关于channel（信道）的关闭。
+!!! 关闭channel相当于解除阻塞。因为channel的存在就是为了通过阻塞机制来同步数据，
+!!! 关闭了channel意味着没有数据同步的需求了，故而表示不会再阻塞了。
 发送者可通过 close 函数关闭一个信道来“表示没有需要发送的值了”。
 必须注意，channel（信道）只能由发送方关闭，接收方不能关闭channel。
 向被关闭的channel（信道）发送数据会导致恐慌（panic）异常。
@@ -107,7 +109,7 @@ GO没有提供类似isClose()这样判断channel是否关闭的函数，但是�
 若没有值可以接收且信道已被关闭，那么在执行完
 v, ok := <-ch
 之后 ok 会被设置为 false。
-读取关闭的通道不会导致恐慌，也不会阻塞，只不过读出的是channel所传递数据类型的空值，
+!!!读取关闭的通道不会导致恐慌，也不会阻塞，只不过读出的是channel所传递数据类型的空值，
 并且，信道与文件不同，通常情况下无需关闭它们。只有在必须告诉接收者不再有需要发送的值时才有必要关闭，
 例如终止一个range 循环。
 **/
@@ -134,7 +136,7 @@ func TestCloseChannel(t *testing.T) {
 }
 
 /**
-知识点5: channel的for range 循环读取。
+知识点5: channel支持for range 操作，进行循环读取。
 循环 for i := range c 会不断从信道取出数据，直到它被关闭。
 如果channel中没有数据，又没有关闭，那么for range 所在goroutine就会阻塞在
 for range 这一行（操作）代码上。
@@ -153,7 +155,7 @@ func TestForRangeOnChannel(t *testing.T) {
 	}
 	accept := func() {
 		defer wg.Done()
-		for i := range ch {
+		for i := range ch { //!!! 这里使用了channel 的for range 操作
 			fmt.Println("read integer ", i)
 		}
 	}
@@ -161,4 +163,14 @@ func TestForRangeOnChannel(t *testing.T) {
 	go send(100)
 	go accept()
 	wg.Wait() // 等待子例程的结束，否则主例程在子例程之前结束。
+}
+func TestChanelBlocking(t *testing.T) {
+	ch := make(chan string)
+	go func() {
+		msg := <-ch
+		fmt.Println(msg)
+		ch <- "pong"
+	}()
+	ch <- "ping" //阻塞等待接收方准备好接收数据
+	fmt.Println(<-ch)
 }

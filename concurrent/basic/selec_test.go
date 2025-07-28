@@ -2,6 +2,7 @@ package basic
 
 import (
 	"fmt"
+	"testing"
 	"time"
 )
 
@@ -117,7 +118,7 @@ func DeadlockSinceNoChannelOp() {
 }
 
 // 当通道操作永远不会关闭的时候，select就会发生死锁异常（panic）
-func DeadlockSinceChannelOpNeverOccured() {
+func TestDeadlockSinceChannelOpNeverOccured(t *testing.T) {
 	var ch chan string = make(chan string)
 	println("程序会发生死锁,因为在等待通道的操作的发生，而没有任何例程对等待的通道进行操作！！")
 	select {

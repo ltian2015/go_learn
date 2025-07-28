@@ -296,12 +296,41 @@ type (
 	Ages       AgeSlice    //底层类型是[]Age ，遇到的引用类型是组合类型而截止。
 )
 
-//上述类型的底层类型推导过程如下，#号表示不再继续向上推导
-//		MyIntType → int
-//		Age → MyIntType → int
-//		IntSlice → []int
-//		MyIntSlice → []MyIntType → #[]int
-//		AgeSlice → []Age → #[]MyIntType → #[]int
-//		Ages → AgeSlice → []Age → #[]MyIntType → #[]int
+// 上述类型的底层类型推导过程如下，#号表示不再继续向上推导
 //
-//--------------------------Underlying Type Exeercise end---------------------------//
+//	MyIntType → int
+//	Age → MyIntType → int
+//	IntSlice → []int
+//	MyIntSlice → []MyIntType → #[]int
+//	AgeSlice → []Age → #[]MyIntType → #[]int
+//	Ages → AgeSlice → []Age → #[]MyIntType → #[]int
+//
+// --------------------------Underlying Type Exeercise end---------------------------//
+func TestStringAsSlice(t *testing.T) {
+	//!!! 字符串本质上就是一个byte（uint8）的切片。所以可以按切片进行操作
+	var s string = "hello world"
+	s2 := s[0:5] //s2的底层类型是string，s2的值是"hello"
+	println("s2=", s2)
+	c := s[0]               //c的底层类型是byte,byte是uint8的别名
+	fmt.Printf("c=%c\n", c) //c的底层类型是byte，c的值是'h'，注意，byte是uint8的别名。
+
+	bytesOfs := []byte(s)
+	runesOfs := []rune(s)                                              //将字符串转换为字节切片，底层类型是[]byte
+	fmt.Printf("length of byte slice Of %s is %v\n", s, len(bytesOfs)) //输出: bytesOf\
+	fmt.Printf("length of rune slice Of %s is %v\n", s, len(runesOfs))
+	fmt.Printf("length of string   %s is %v\n", s, len(s))
+	s1 := "你好，世界" //s1的底层类型是string，s1的值是"你好，世界"
+	bytesOfs1 := []byte(s1)
+	runesOfs1 := []rune(s1)                                              //将字符串转换为字节切片，底层类型是[]byte
+	fmt.Printf("length of byte slice Of %s is %v\n", s1, len(bytesOfs1)) //输出: bytesOf\
+	fmt.Printf("length of rune slice Of %s is %v\n", s1, len(runesOfs1))
+	//!!! 字符串的底层数组是byte所以len函数得到字符串的长度是byte的长度，而不是（中文）符码的个数。
+	//!!! rune表示了一个整数，该整数代表了字符在unicode中的“值点”，unicode记录了人类目前所有的符号，
+	// !!! 符号的值点不超int32的取值范围，但是如果用int32表示每个值点整数就会浪费空间，比如0,1这样的整数一个字节就可以了。
+	// !!! utf-8 编码则是使用不同个数的byte来编码unicode字符集不同范围的值点，这样可以节省空间。
+	// !!! 比如，acsii 字符集的值点范围是0-127，在utf-8编码方式下，使用一个byte来表示，而中文字符的值点范围超过了65535，
+	// !!! 在utf-8编码规则中，常见汉字需要使用三个byte来表示，而生僻汉字（在unicode中，生僻汉字与常见汉字的值点不在一个区块中）
+	// !!! 则需要4个byte来表示。
+	fmt.Printf("length of string  %s is %v\n", s1, len(s1))
+
+}

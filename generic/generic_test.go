@@ -21,30 +21,24 @@ import (
 // 这种操作被称为泛型类型的实例化（instantiation）。泛型类型（Generic）实例化的结果是产生了一个
 // 类型（Type）,类型(Type)实例化后，会产生值(Value)。
 //
-// ListHead is the head of a linked list.
-type ListHead[T any] struct {
-	head *ListElement[T]
+
+// LinkedList代表一个链表类型
+type LinkedList[T any] struct {
+	head *ListElement[T] // 链表的头节点
 }
 
-// ListElement is an element in a linked list with a head.
-// Each element points back to the head.
+// 列表元素是链表中的一个元素， 每个元素都指向后继节点，也都指向链表自身，表明自己是哪个链表的元素。
 type ListElement[T any] struct {
 	next *ListElement[T]
 	val  T
-	// Using ListHead[T] here is OK.
-	// ListHead[T] refers to ListElement[T] refers to ListHead[T].
-	// Using ListHead[int] would not be OK, as ListHead[T]
-	// would have an indirect reference to ListHead[int].
-	head *ListHead[T]
+	head *LinkedList[T]
 }
 
 /**
-The elements of an ordinary interface type are method signatures and
-embedded interface types.
- We propose permitting three additional elements that may be used in an interface type
- used as a constraint. If any of these additional elements are used,
- the interface type may not be used as an ordinary type, but may
-  only be used as a constraint.
+!!! 作为类型约束的接口与普通的接口区别：
+普通接口类型的元素包括方法签名和嵌入的接口类型。
+我们提倡准许在“用作约束的接口类型”中使用三个额外元素。
+如果一个接口类型使用了这些额外元素中的任何一个，那么，该接口类型都不得用作普通类型，而只能用作约束。
 **/
 
 func Min[T interface {
@@ -53,25 +47,41 @@ func Min[T interface {
 }](ts []T) T {
 	var t = ts[0]
 	var i int = 8
-	// var o ordered = i // 通过三种特殊方式定义的接口，只能作为泛型约束的接口不能向普通接口那样使用。
+	// var o ordered = i //!!! 通过三种特殊方式定义的接口，只能作为泛型约束的接口不能向普通接口那样使用。
 	//_=i
 	_ = i
 	return t
 }
 
-// 嵌入了约束型的接口就只能作为约束而存在，不能当作普通接口来使用。
-// 不能用来声明变量
+// !!!这是一个约束（类型集-实现泛型），而不是一个普通的接口（方法集-实现多态）。
+// !!!当接口作为类型集的约束时，就限定了类型集中所有类型共用的方法集。
+// !!!当接口作为方法集的时候，就限定了满足该方法集的所有类型集。
+// !!! 嵌入了约束型的接口就只能作为约束而存在，不能当作普通接口来使用。
+// !!!不能用来声明指向具体类型的变量，通过变量来使用方法集（多态）。
 type ComparableAdder interface {
-	comparable //这是一个约束类型的接口，非普通接口。
-	Add() int
+	comparable //这是一个约束类型的接口，非普通接口。 该约束要求方法集合中必须包括： ==和!=操作符
+	Add(v int) int
+}
+type MyIntType int64
+
+func (m MyIntType) Add(v int) int {
+	return int(m) + v
 }
 
 func compareThenAdd[T ComparableAdder](t1, t2 T) int {
 	if t1 == t2 {
-		return t2.Add()
+		return t2.Add(5)
 	} else {
-		return t1.Add()
+		return t1.Add(10)
 	}
+}
+func TestCompareThenAdd(t *testing.T) {
+	var m1 MyIntType = 10
+	var m2 MyIntType = 20
+	var r1 = compareThenAdd(m1, m2)
+	fmt.Println("r1 is ", r1)
+	var r2 = compareThenAdd(m2, m2)
+	fmt.Println("r2 is ", r2)
 }
 
 ////////////////////////////类型推断/////////////////////////////////////////
@@ -113,7 +123,6 @@ func TestTypeInferenceByFuncCall(t *testing.T) {
 	var strs2 = Map(ints2, strconv.Itoa)
 	fmt.Println(ints)
 	fmt.Println(strs2)
-
 }
 
 // //////////////////基于约束的类型推断/////////////////////
@@ -129,7 +138,7 @@ func Double[E integer](es []E) []E {
 	return r
 }
 
-// 这泛型函数中，类型参数S的约束或元类型（Meat—Type）是由另外的一个类型参数E所定义的，
+// 在泛型函数中，类型参数S的约束或元类型（Meat—Type）是由另外的一个类型参数E所定义的，
 // 所以，称S的约束或元类型是结构化约束（structural constrain）。
 // 这个例子展示了如何使用类型参数定义其他的类型参数的约束，以及取得的效果。
 
@@ -160,15 +169,15 @@ func TestTypeInferenceByConstrain(t *testing.T) {
 
 // //////////////////////////////////////////////////////////////////
 // //////////////指针方法案例 Pointer Method Example////////////////////////////////////////////
-// 这是一个类型约束
-type Setter interface {
+// 这是一个接口，类型约束
+type StrSetter interface {
 	Set(string)
 }
 
 // FromString函数使用字符串切片作为输入，返回类型T的切片。
 // 注意，由于类型参数T没有用在函数的输入中，所以，无法使用函数输入参数进行类型推断。
 // 如果 T是指针类型这个方法的实现会产生运行时错误
-func FromStrings[T Setter](s []string) []T {
+func FromStrings[T StrSetter](s []string) []T {
 	result := make([]T, len(s)) //决定了T不能是指针类型。指针类型的空值是nil
 	for i, v := range s {
 		result[i].Set(v) // 如果T是指针，则reuslt[i]=nil,就会导致运行时的panic。
@@ -176,14 +185,14 @@ func FromStrings[T Setter](s []string) []T {
 	return result
 }
 
-type Settable int
+type StringSetter int
 
 // 注意是*Settable实现了 Set方法，而不是Settable实现了Set方法。
-func (p *Settable) Set(v string) {
+func (p *StringSetter) Set(v string) {
 	if i, err := strconv.Atoi(v); err != nil {
 		panic(err)
 	} else {
-		*p = Settable(i)
+		*p = StringSetter(i)
 	}
 }
 func TestPointerExample1(t *testing.T) {
@@ -192,7 +201,7 @@ func TestPointerExample1(t *testing.T) {
 	//var ss=FromStrings[Settable](strs) //Settable并没有实现Set方法。
 	//编译oK，运行时，空指针panic
 	//而且，我们希望得到的是 []Settable,不是[]*Settable
-	var ss = FromStrings[*Settable](strs) //*Settable实现了了Set方法，但是*Settable的零值是nil，使用*nil导致运行时异常(panic)。
+	var ss = FromStrings[*StringSetter](strs) //*Settable实现了了Set方法，但是*Settable的零值是nil，使用*nil导致运行时异常(panic)。
 	fmt.Println(ss)
 }
 
@@ -236,10 +245,10 @@ func TestPointerExample2(t *testing.T) {
 	// 而，基于约束的类型推断从第一个类型参数开始推断，所以T -> Settable,
 	// PT-> *T -> *Settable
 	// *Settable实现了Set方法，且是指针类型，满足了Setter2[T]约束。
-	var ss = FromStrings2[Settable](strs) //*Settable实现了了Set方法，但是*Settable的零值是nil，使用*nil导致运行时异常(panic)。
+	var ss = FromStrings2[StringSetter](strs) //*Settable实现了了Set方法，但是*Settable的零值是nil，使用*nil导致运行时异常(panic)。
 	fmt.Println(ss)
-	var vStbl Settable = Settable(200)
-	var pv *Settable = &vStbl
+	var vStbl StringSetter = StringSetter(200)
+	var pv *StringSetter = &vStbl
 	_ = pv
 	//含联合类型 (T1|T2|T3) 、底层类型(~T)、指针类型的（*T）等元素的接口不能
 	// 当作普通接口使用，只能当作泛型参数的类型约束使用.
@@ -373,7 +382,7 @@ type StructWithXfield interface {
 	GetX() int
 }
 
-//注意，在泛型类型中无法对具有相同属性的结构体类型参数的共性属性进行操作。
+//注意，直到1.24版，在泛型类型中无法对具有相同属性的结构体类型参数的共性属性进行操作。
 //IncrementX函数“不正确（INVALID）” .
 // 实事上，就算是p.x的返回类型都一样，该函数还是不正确。
 //可能是因为最终的Go语言规范(spec)与提案不一样，
@@ -381,9 +390,9 @@ type StructWithXfield interface {
 
 func IncrementX[T StructWithXfield](p T) {
 
-	v := p.GetX() //注意，目前还不支持
+	v := p.GetX() //共性方法可以支持！
 	v++
-	//p.X = v
+	//p.X = v // !!!多个结构体类型共有的共性属性X 在1.24版仍不被识别。
 }
 
 // sliceOrMap is a type constraint for a slice or a map.
