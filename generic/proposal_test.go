@@ -1,7 +1,7 @@
 package generic
 
-//本文件中的代码来自Golang的泛型提案中的代码。
-//https://go.googlesource.com/proposal/+/HEAD/design/43651-type-parameters.md#Type-parameters
+// 本文件中的代码来自Golang的泛型提案中的代码。
+// https://go.googlesource.com/proposal/+/HEAD/design/43651-type-parameters.md#Type-parameters
 // NodeConstraint is the type constraint for graph nodes:
 // they must have an Edges method that returns the Edge's
 // that connect to this Node.
@@ -46,7 +46,7 @@ func (ft *FromTo) Nodes() (*Vertex, *Vertex) {
 	return nil, nil
 }
 
-var g = New[*Vertex, *FromTo]([]*Vertex{})
+var g = New([]*Vertex{})
 
 type NodeInterface interface {
 	Edges() []EdgeInterface

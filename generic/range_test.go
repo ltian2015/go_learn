@@ -160,7 +160,7 @@ func TestGenericBasic(t *testing.T) {
 	nrs := []NumberRange[int]{nr2, nr3, nr4}
 	ok, nr5 := nr1.UnionOthers(nrs)
 	var r1, r2, r3, r4 Range[int, NumberRange[int]] = nr1, nr2, nr3, nr4
-	_, b := Intersect[int, NumberRange[int]](nr1, nr2)
+	_, b := Intersect(nr1, nr2)
 	_ = b
 	var ok2, nr6 = nr1.IntersectOthers(nrs[:3])
 	var isIntersect1, ir1 = Intersect(r1, r2)

@@ -487,7 +487,7 @@ func Convert[To, From integers](from From) To {
 
 func TestTypeConvert(t *testing.T) {
 	var a int8 = 10
-	var b int = Convert[int, int8](a)
+	var b int = Convert[int](a)
 	println(b)
 	var c int = 100000
 	var d int8 = Convert[int8](c)

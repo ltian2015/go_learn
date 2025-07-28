@@ -48,15 +48,15 @@ func Merge[T any](values []Mergable[T]) T {
 // Score 是一个Mergable类型，它实现了Merge方法。
 type Score int
 
-func (this Score) Merge(s Score) Score {
-	return Score(this + s)
+func (score Score) Merge(s Score) Score {
+	return Score(score + s)
 }
 
 // Power 是一个Mergable类型，它实现了Merge方法。
 type Power int
 
-func (this Power) Merge(p Power) Power {
-	return Power(this + p)
+func (score Power) Merge(p Power) Power {
+	return Power(score + p)
 }
 
 // //////////////////以下代码是一个应用，将抽象处理与具体类型相结合////////////////////////
