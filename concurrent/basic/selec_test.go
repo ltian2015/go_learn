@@ -125,3 +125,21 @@ func TestDeadlockSinceChannelOpNeverOccured(t *testing.T) {
 	case <-ch:
 	}
 }
+
+// !!!通过select实现超时控制
+// 通过time.After函数返回一个只读的channel，向里面发送一个当前的时间，
+// 这样就可以实现超时的功能。
+// 只要在select语句中使用time.After函数返回的channel，就可以实现超时。
+// 这个函数返回的channel是只读的，不能向里面发送数据，只能接收数据。
+// 这个函数的返回值是一个只读的channel，里面发送的是当前的时间。
+func TestImplementTimeoutWithSelect(t *testing.T) {
+	chWork := make(chan int)
+
+	select {
+	case v := <-chWork:
+		fmt.Println("work done, value:", v)
+		//!!! time.After 函数返回了一个只读的channel，并向里面发送了一个当前的时间。
+	case timeOnTimeout := <-time.After(10 * time.Second):
+		fmt.Println("timeout 10 seconds!, current time is :", timeOnTimeout)
+	}
+}

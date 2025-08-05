@@ -47,3 +47,25 @@ func idAdd[T any](iis IntIdStruct[T]) {
 func printContent[T1, T2 any](gs GenericStruct[T1, T2]) {
 	fmt.Printf("{id: %v, Value: %v }\n", gs.id, gs.Value)
 }
+
+type structField interface {
+	struct {
+		a int
+		X int
+	} |
+		struct {
+			b int
+			X int
+		} |
+		struct {
+			c int
+			X int
+		}
+}
+
+// This function is INVALID.
+func IncrementX2[T structField](p T) {
+	//v := p.X // INVALID: type of p.x is not the same for all types in set
+	//v++
+	//	p.X = v
+}

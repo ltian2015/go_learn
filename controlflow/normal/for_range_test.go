@@ -240,7 +240,7 @@ func Test_push(t *testing.T) {
 
 func (s *Set[E]) Pull() (next func() (E, bool), stop func()) {
 	dataCh := make(chan E)            //!!! 使用缓冲通道来存储集合中的元素
-	stopFlagCh := make(chan struct{}) //!!! 使用一个停止标志通道来控制拉取操作
+	stopFlagCh := make(chan struct{}) //!!! 使用一个停止标志通道来控制拉取操作;struct{}是一个没有定义成员的结构体的字面类型
 	go func() {
 		defer func() {
 			close(dataCh)
@@ -261,6 +261,7 @@ func (s *Set[E]) Pull() (next func() (E, bool), stop func()) {
 		return e, ok      //!!! 返回拉取的元素和是否成功拉取的标志
 	}
 	stop = func() {
+
 		close(stopFlagCh) //!!! 关闭停止标志通道，通知拉取操作停止
 
 	}

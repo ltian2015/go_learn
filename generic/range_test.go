@@ -12,12 +12,6 @@ type number interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~float32 | ~float64 |
 		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
 }
-type TimeGetter []interface {
-	GetTime() time.Time
-}
-type timing interface {
-	time.Time | TimeGetter
-}
 
 type Range[P comparable, R any] interface {
 	Range(start, end P) R
@@ -32,6 +26,7 @@ type Range[P comparable, R any] interface {
 	Intersect(other R) (bool, R)
 	IntersectOthers(other []R) (bool, R)
 }
+type Interval Range[time.Time, Interval]
 
 func IsIntersected[P comparable, R any](this, other Range[P, R]) bool {
 	thisStart, thisEnd := this.DeRange()

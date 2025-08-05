@@ -378,7 +378,18 @@ type HasGetXMethod interface {
 	GetX() int
 }
 type StructWithXfield interface {
-	SAX | SBX | SCX
+	struct {
+		A int
+		X int
+	} |
+		struct {
+			B int
+			X int
+		} |
+		struct {
+			C int
+			x int
+		}
 	GetX() int
 }
 
