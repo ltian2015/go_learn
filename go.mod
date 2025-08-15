@@ -10,9 +10,8 @@
 //所以，go.mod文件必须放在模块所在的路径下，也就是必须放在“相对根路径/”下。
 module com.example/golearn //定义模块的全球唯一标识，一个模块只能有一个go.mod文件，module只能出现一次。
 
-go 1.24 //定义该模块的go语言版本
+go 1.25//定义该模块的go语言版本
 
 require (
-//golang.org/x/exp/constrains v0.0.0
 github.com/google/wire v0.5.0 //定义该模块所依赖的其他模块。一个模块可以依赖很多模块，require可以出现多次。
 )

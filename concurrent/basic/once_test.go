@@ -3,7 +3,6 @@ package basic
 import (
 	"sync"
 	"testing"
-	"time"
 )
 
 /*
@@ -21,37 +20,37 @@ once.Do(f)的线程将会阻塞，直到到f()返回。
 大工作的组成部分，大的工作定义了任务需要处理的外部状态。但是，这样的任务尽量少用，因为多个任务都
 修改同一组外部状态，逻辑上并不好理解。所以，最好只用于初始化或者销毁工作。
 */
-var wg sync.WaitGroup
-var greetingWord string
-var once sync.Once
 
-func setup() {
+var greetingWord string
+var once sync.Once  //!!! 被同一个sync.Once实例执行的函数才能只执行一次，
+var once2 sync.Once //!!! 在不同sync.Once实例中执行无法保证只执行一次
+
+func initialize() {
 	greetingWord = "hello ervybody"
-	//如果setup() 被多次调用，那么应该打印多次，但这里，setup() 函数只在sync.Once.Do()中调用。
-	println("setup task will over ,wait for 2 seconds")
-	time.Sleep(time.Second * 2)
+	//如果initialize() 被几次调用，那么下面的这段话就会被打印几次。
+	println("初始化工作已经完成！")
 }
-func doSetupA() {
-	once.Do(setup) //这是一个潜在的等待点，只有一个线程可以执行，其他线程必须等待setup完成，然后越过等待点直接执行后面的代码
+func doInitializeA() {
+	once.Do(initialize) //!!! 这是一个隐式的阻塞点，只有一个线程可以执行，其他线程必须等待initialize完成，然后越过等待点直接执行后面的代码
 	println("A: ", greetingWord)
-	wg.Done()
+
 }
-func doSetupB() {
-	once.Do(setup)
+func doInitializeB() {
+	once.Do(initialize)
 	println("B: ", greetingWord)
-	wg.Done()
+
 }
-func doSetupC() {
-	once.Do(setup)
+func doInitializeC() {
+	once2.Do(initialize)
 	println("C: ", greetingWord)
-	wg.Done()
+
 }
 
 func TestOnce(t *testing.T) {
+	var wg sync.WaitGroup
 	println("begin test")
-	wg.Add(3)
-	go doSetupA()
-	go doSetupB()
-	go doSetupC()
+	wg.Go(doInitializeA)
+	wg.Go(doInitializeB)
+	wg.Go(doInitializeC)
 	wg.Wait()
 }

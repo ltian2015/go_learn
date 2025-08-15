@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"sync"
 	"testing"
+	"time"
 )
 
 /**
@@ -74,4 +75,42 @@ func TestHugeNumGortouineInRunning(t *testing.T) {
 	}
 	fmt.Println("all goroutines terminate,the main program exit")
 
+}
+
+func concurrentCompute(a int) <-chan int {
+	ch := make(chan int, 1)
+	go func() {
+		time.Sleep(3 * time.Second)
+		a = a * a
+		ch <- a
+	}()
+	return ch
+}
+
+func ConcurrentFuncInovStyle1() {
+	start := time.Now()
+	ch1 := concurrentCompute(100) //启动执行goroutine
+	ch2 := concurrentCompute(200) //启动执行goroutine
+	a := <-ch1                    //阻塞等待
+	b := <-ch2                    //阻塞等待
+	end := time.Now()
+	d := end.Sub(start)
+	println("方式1：执行了", d.Seconds(), "秒钟", "得到:", a+b)
+
+}
+func ConcurrentFuncInovStyle2() {
+	start := time.Now()
+	//!!! 先对表达式的第一个子表达式进行求值，然后再对第二子子表达式求值，然后进行相加
+	//!!! 表达式求值的顺序决定了本来是并行执行的goroutine变成了串行。
+	a := <-concurrentCompute(100) + <-concurrentCompute(200)
+	end := time.Now()
+	d := end.Sub(start)
+	println("方式2：执行了", d.Seconds(), "秒钟", "得到:", a)
+}
+
+// !!! 这个测试表明，并发执行，对于调用返回通道的并发执行的函数，
+// !!! 在不同代码位置进行调用的这种调用方式的不同，会导致原本并行的执行变成了串行执行
+func TestConcurrentFuncInovStyles(t *testing.T) {
+	ConcurrentFuncInovStyle1()
+	ConcurrentFuncInovStyle2()
 }

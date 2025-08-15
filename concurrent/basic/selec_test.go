@@ -8,10 +8,10 @@ import (
 
 // 学习select用法
 /**
-!!! select 语句可以让Go 例程“阻塞等待”多个“通道操作（send/receive）”的完成。
+!!! select 语句用于“监听”若干个“阻塞等待”的多个“通道操作（send/receive）”的完成。
 
-语法上，select 语句用于选择从多个 send/receive"通道操作"中做出选择。每个通道操作都是一个case表达式，
-一个case表达式对应一个case代码段。case表达式与case代码段之间用冒号（:）分割，语法是：
+语法上，select 语句用于监听多个 send/receive"通道操作"，并对监听结果中做出选择。每个case表达式都代表对一个通道操作的监听，
+case表达式与case代码段之间用冒号（:）分割，语法是：
 case [case 通道send/receive表达式] :
 	 case代码段开始
 	   .......
@@ -74,7 +74,7 @@ func LearnSelect1() {
 		fmt.Println("ch3 case...")
 		fmt.Println(v)
 		//有了defualt语句，则上述case分支大概率得不到执行，只执行default代码段。
-		// 但是，每个case 表达式都会被求值。详细情况可以看 func LearnSelect2()
+		// 但是，每个case 表达式都会被求值。详细情况可以看 func SelectCaseEvaluate()
 	default:
 		fmt.Println("ch2 case...")
 		fmt.Println(<-ch2)
