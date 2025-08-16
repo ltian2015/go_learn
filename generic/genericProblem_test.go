@@ -16,6 +16,7 @@ type Elli struct {
 	X, Y, W, H int
 }
 
+// !!! 我想看看什么时候这个编译错误可以被编译器解决
 func GetX[P interface{ Point | Rect | Elli }](p P) int {
 	return p.X
 }
