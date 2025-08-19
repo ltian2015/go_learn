@@ -1,0 +1,25 @@
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+
+    exporters:
+      jaeger:
+        endpoint: jaeger-all-in-one:14250
+        tls:
+          insecure: true
+      logging:
+        loglevel: debug
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [logging, jaeger]
+        metrics:
+          receivers: [otlp]
+          exporters: [logging]
+        logs:
+          receivers: [otlp]
+          exporters: [logging]
