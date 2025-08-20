@@ -74,6 +74,7 @@ func getError1() error {
 }
 
 // !!! 注意返回的是抽象的接口类型，不是具象的类型
+// !!! 如果要返回空接口，请直接返回nil而不是符合接口规范的具体类型的空值。
 func getError2() error {
 	return nil //这是真正的nil，而（*MyError, nil）不是真正的nil
 }

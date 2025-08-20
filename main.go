@@ -34,8 +34,7 @@ package main
 
 import (
 	//使用空标识符(blank identifier) _ 作为包的别名可以引入一个包而暂时不使用（预留未来使用）
-	"fmt"
-	"sync"
+
 	"time"
 
 	_ "com.example/golearn/functions" //!!!该包暂时不使用，但是先导入
@@ -79,46 +78,5 @@ func init() {
 // 注意，其他非main包中也可以有main()函数，但非main包中的main()函数只是一个普通的函数。
 // 作为入口点的main()函数所在的文件名未必一定命名为main.go,也可以是其他文件名，比如entrypoint.go
 func main() {
-	println("main function has started....")
-	var noUse int
-	// TODO: 使用空标识符解决已声明但是暂不使用（但未来打算使用）的变量无法通过编译的问题。
-	// 主要用来写TODO的临时代码
-	_ = noUse
-	println(welcome)
-	fmt.Printf("%b\n", 168)
-	//functionalstyle.DataBandingTest()
-
-	//VarCopy.TestVarCopy()
-	//memorymanage.MemoryLayoutTest1()
-	//contextlearn.Run()
-	//learnSelect.DeadlockSinceChannelOpNeverOccured()
-	//concurrentLearn.CopyForbidTest()
-	//deferpanic.TestPanicDeferAndRecover()
-	//EmptyStructEqualityTest()
-	//EqualityAndCopy.TestCopyForbid()
-	//controlflow.TestSwitch()
-	//controlflow.TestIf()
-	//cb.FixDeadLock()
-	wg := sync.WaitGroup{}
-	wg.Add(2) //增加两个任务。
-	go func() {
-		defer wg.Done()
-		func() {
-			//panic("panic in a goroutine")
-		}()
-	}()
-	go func() {
-		defer wg.Done()
-		func() {
-			//panic("panic in other goroutine")
-		}()
-	}()
-	wg.Wait()
-	time.Sleep(2 * time.Second)
-	println("main function  exit")
-
-	//	cb.ForRangeOnChannel()
-	var lock sync.Mutex
-	lock.Unlock()
 
 }

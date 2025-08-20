@@ -10,29 +10,37 @@ defer和panic/recover是go语言中特殊的程序控制流。
 package particular
 
 /**
-1. 如何认识GO语言中的error与panic的区别。
+1. !!! 如何认识GO语言中的error与panic的区别。
+
+
 GO语言函数提供了两种报错机制，一种是返回error机制，一种是抛出panic机制。
 返回error，表示函数执行中出现的error属于程序正常的领域业务处理逻辑考虑范围之内的正常业务问题，
 将其以error数据的方式返回给外层调用程序，有助于外层程序对error做出针对性的领域业务逻辑处理，
 这些error属于程序正常领域业务逻辑范围要考虑的问题。比如，取款金额超过了账户余额，
 应该返回error而不是panic。
 
-而抛出panic类似于Java的异常机制，表明函数中出现的问题与程序所在领域的业务处理逻辑无关，往往属于bug，
-或系统级的问题，由于这类问题不在程序所在领域的业务处理逻辑考虑范围之内，所以不应以函数的调用结果的方式
+而抛出panic类似于Java的异常机制，表明函数中出现的问题与程序所在领域的业务处理逻辑无关，往往属于系统级的问题，
+由于这类问题不在程序所在领域处理逻辑考虑范围之内，所以不应以函数的调用结果的方式
 ，也就是error返回给外层函数处理。这类问题就是panic，对panic的处理往往是只能记录问题，交给系统监控者或者开发者修改bug。
 比如，数组访问超界、网络连接故障、对不允许拷贝的对象进行了拷贝、预想的运行环境没有正确初始化等。
 
-举一个现实场景的例子，表明error与panic的应用。
-比如，对于一个银行账户处理领域中，有一个函数可以根据给定的账户号参数和钱数，从账户中取出给定数额的钱，函数返回余额。
-在这个问题域中，考虑到取钱余额不足是正常的逻辑。所以，如果该函数的调用着所给定的账户号所指定的账户余额不足，
-则应返回一个error，这样调用者可以对该类型的错误进行相应处理，比如换一个账户进行操作，或者生成给操作者的人性化提示信息。
-但如果访问数据库失败，这就不是该领域所应处理的问题，则应抛出异常，因为这是来自另一个正交领域的问题。
-也应在另一个正交领域解决panic，比如，尝试重新连接数据库，或者写入异常日志。
+   !!! (1) panic无论发生在哪个goroutine中，如果没有处理，都会导致整个程序进程的崩溃，但error不会。
+   !!!（2） panic表示程序遇到无法预期的情况，error表示程序逻辑有错误。
+   !!! (3) 尽量使用error而不是panic，对panic的使用要慎之又慎！！！
+   !!!        对于服务程序，除非在服务程序初始化时，依赖运行环境不具备，可以抛出panic，
+   !!!        让服务程序终止运行。否则，运行中的服务程序抛出panic一旦忘记捕获，就会导致运行中的服务程序崩溃；
+   !!!        对于通用的库程序，除非有类似数组访问越界、拷贝了不允许拷贝的对象这样的系统级所禁止的行为，才
+   !!!        使用过panic。
 
-GO语言将领域内的业务逻辑错误（error）从广泛意义的错误中“显式地”剥离出来，有助于使业务逻辑处理更加清晰，
-使得领域业务逻辑中对业务逻辑错误的正常处理，与领域之外的各种异常的处理分离开来。
+ !!!GO语言将领域内的业务逻辑错误（error）从广泛意义的错误中“显式地”剥离出来，有助于使业务逻辑处理更加清晰，
+ !!! 使得领域业务逻辑中对业务逻辑错误的正常处理，与领域之外的各种异常的处理分离开来。
 
-2.GO语言中的panic的抛出与捕获机制。
+!!! 2.GO语言中的panic的抛出与捕获机制。
+!!!   (1)所有的goroutine都是平级的，不管是在哪个goroutine运行时又启动了新的goroutine，这些
+!!!      goroutine之间没有父子关系，所以彼此之间不能捕获panic，
+!!!      任何一个goutine中发生了panic都会导致整个程序崩溃,
+!!!      因此,如果想要程序不崩溃，在gorutine入口函数处捕获panic是该gorutine函数调用层级中
+!!!      可以捕获到panic的最外层了，在运行goroutine的代码所在函数中无法捕获goroutine内的panic。
 
 在GO语言中，可以使用内置的panic函数抛出一个“异常”，异常被抛出时，调用panic的函数，假定是f1_1，立即终止正常执行，
 进入退出阶段。如果在退出阶段没有使用内置的recover函数捕获并清除f1_1函数的panic状态，那么，执行完退出阶段后，
@@ -87,6 +95,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -137,41 +146,85 @@ func TestPanicRecoverInOneGoroutine2(t *testing.T) {
 	println("unreachable ") //这一行执行不到了。因为前面发生了panic
 }
 
-//测试多个goroutine中发生panic对其他正常goroutine和整个程序的影响。
-//并发执行两个不相关的子任务，但是在任务较少，执行时间短的子任务2中抛出panic。
-//会对执行任务更重，执行时间更长（用休眠3秒）子任务1产生影响。
+// !!! 测试多个goroutine中发生panic对其他正常goroutine和整个程序的影响。
+// !!! 并发执行三个不相关的子任务，但是在任务较少，执行时间短的子任务2中抛出panic。
+// !!! 如果不或处理，会对执行任务更重，执行时间更长（用休眠3秒）子任务1产生影响。
+type PanicHandler interface {
+	Handle(info string, r any)
+	GetPanicCounts() int
+}
+type LogAndRecoverPanicHandler struct {
+	panicCount atomic.Int64
+}
 
-func TestPanicAffectInMultiGoroutines(t *testing.T) {
+func (h *LogAndRecoverPanicHandler) Handle(source string, r any) {
+	//panicInfo := fmt.Sprint(r)
+	panicInfo := fmt.Sprintf("%v", r)
+	fmt.Println("Panic处理器捕获了来自 ", source, " 的Panic，内容为：", panicInfo)
+	//old := h.panicCount.Load()
+	count := h.panicCount.Add(1)
+	h.panicCount.Store(count)
+
+}
+func (h *LogAndRecoverPanicHandler) GetPanicCounts() int {
+	return int(h.panicCount.Load())
+
+}
+
+func PanicRecover(source string, ph PanicHandler) {
+	r := recover()
+	if r == nil {
+		return
+	}
+	ph.Handle(source, r)
+}
+func testGoroutinePanic() {
+	ph := &LogAndRecoverPanicHandler{}
+	//!!! 试图在“所谓主”goroutine中捕获并恢复“所谓子”goroutine中发生的panic，
+	//!!! 从而保持程序正常而不会崩溃，但这个努力是徒劳的！
+	//!!! goroutine内的panic在goroutine的入口处是最外的捕获口，在向外就捕获不到了。
 	defer func() {
 		r := recover()
-		fmt.Println("recover panic : '", r, "' is catched in main goroutine!")
-	}() //试图在主goroutine中捕获并恢复子goroutine中发生的panic，保持程序正常而不会崩溃，但这个努力是徒劳的！
-
-	fmt.Println("main task begin")
-
-	wg := sync.WaitGroup{}
-	wg.Add(2) //为主任务增加两个并发执行的子任务。只有两个任务都完成，主任务才能继续工作。
+		if r != nil {
+			fmt.Println("恢复错误: '", r, "' 在主线程被捕获并处理!")
+		}
+	}()
+	fmt.Println("主任任务开始")
 	//子任务1，任务重，执行难时间长（用休眠3秒钟模拟）
 	go func() { // 子routine的入口函数。子routine内没有被recover的panic最终会抛给此函数
-		defer wg.Done()                   //等待计数减1。可能会被执行，取决于另一个goroutine的发生panic导致整体崩溃的发生时刻
-		fmt.Println("sub task 1   begin") //可能会被执行，取决于另一个goroutine的发生panic导致整体崩溃的发生时刻
-		func() {
-			time.Sleep(3 * time.Second)    //在此休眠期间，由于另一个goroutine的panic所导致的整体崩溃，使得本goroutine后续代码无法接续执行。
-			fmt.Println("sub task 1  end") //其他goroutine发生了panic，导致整体崩溃，本行代码来不及执行。
-		}()
+		defer PanicRecover("子任务1", ph)
+		//	defer wg.Done()              //等待计数减1。可能会被执行，取决于另一个goroutine的发生panic导致整体崩溃的发生时刻
+		fmt.Println("子任务1开始执行...")   //可能会被执行，取决于另一个goroutine的发生panic导致整体崩溃的发生时刻
+		time.Sleep(30 * time.Second) //在此休眠期间，由于另一个goroutine的panic所导致的整体崩溃，使得本goroutine后续代码无法接续执行。
+		fmt.Println("子任务1结束执行")      //其他goroutine发生了panic，导致整体崩溃，本行代码来不及执行。
 	}()
 	//子任务2，任务较轻，执行时间短
 	go func() { // 子routine的入口函数。子routine内没有被recocer的panic最终会抛给此函数。
-		defer wg.Done()                     //等待计数减1,会被执行
-		fmt.Println("sub task 2  executed") //会被执行
-		func() {
-			fmt.Println("sub task 2  will panic") //会被执行
-			panic("sub-taks2-panic")              //抛出 panic，因为，没有被捕获，会导致程序整体崩溃，殃及另一个goroutine
+		//	defer wg.Done()                      //等待计数减1,会被执行
+		defer PanicRecover("子任务2", ph) //!!! 如果此处不捕获panic，那么整个服务都会崩溃
+		fmt.Println("子任务2开始执行...")     //会被执行
+		fmt.Println("子任务2将会抛出异常")      //会被执行
+		func() {                       //!!! 这个函数中抛出的panic会在goroutine入口函数被捕获
+			fmt.Println("shit,子任务2这活太糟糕了，我要受不了了！！！")
+			time.Sleep(10 * time.Second)     //休眠300毫秒后抛出异常，确保上段代码中运行的线程执行
+			panic("无法忍受环境恶劣而崩溃！！！！！！！！！！！！") //!!! 抛出 panic，如果没有被捕获，会导致程序整体崩溃，殃及所有的goroutine
 		}()
 	}()
-	wg.Wait() //等待并发执行的所有子任务完成。
-	//由于阻塞等待期间，子任务2的goroutine抛出了panic，导致整个程序崩溃,因此，下面代码永远不会被执行。
-	fmt.Println("can not reachable")
+	//子任务3，每隔3秒汇报一次工作
+	go func() {
+		defer PanicRecover("子任务3", ph)
+		for {
+			time.Sleep(3 * time.Second)
+			println("子任务3 完成了一次处理")
+		}
+	}()
+	<-time.After(40 * time.Second)
+	fmt.Println("服务到达时间退出")
+	fmt.Println("服务共发生了", ph.GetPanicCounts(), "次panic")
+}
+func TestPanicAffectInMultiGoroutines(t *testing.T) {
+	testGoroutinePanic()
+
 }
 
 // 测试通过defer和recover机制保护每个goroutine实例不会因发生panic而崩溃整个程序。
@@ -184,7 +237,7 @@ func TestPanicRecoverInMultiGoroutines(t *testing.T) {
 			fmt.Println("recover panic: '", r, "' in ", taskName)
 		}
 	}
-
+	defer goroutineProtecter("main goroutine")
 	fmt.Println("main task begin")
 	wg := sync.WaitGroup{}
 	wg.Add(2) //为主任务增加两个并发执行的子任务。只有两个任务都完成，主任务才能继续工作。
@@ -192,7 +245,7 @@ func TestPanicRecoverInMultiGoroutines(t *testing.T) {
 	go func() { // 子routine的入口函数。子routine内没有被recover的panic最终会抛给此函数
 		defer wg.Done()                        //会被执行
 		defer goroutineProtecter("sub task 1") //保护goroutine
-		fmt.Println("sub task 1   begin")      //会被执行
+		fmt.Println("sub task 1  begin")       //会被执行
 		func() {
 			time.Sleep(3 * time.Second)    //会被执行
 			fmt.Println("sub task 1  end") //会被执行

@@ -96,7 +96,7 @@ func TestUnsafeMap(t *testing.T) {
 
 // 使用Mutex使得并发读写map不会发生冲突，
 // 注意,mutex加锁使得同时只有一个线程能访问map，无论读写都会排队，而map的读访问是并发安全。
-// 这就降低了多线程并发读取map的性能。如果想提高多线程并发读map的性能，需要使用RWMutex
+// !!! 这会降低了多线程并发读取map的性能。如果想提高多线程并发读map的性能，需要使用RWMutex
 func TestMakeMapSafeUsingMutex(t *testing.T) {
 	var loopWirte = func(m map[int]int, lock *sync.Mutex) {
 		for n := 0; n < 100000; n++ {
@@ -120,83 +120,6 @@ func TestMakeMapSafeUsingMutex(t *testing.T) {
 	lock := &sync.Mutex{}
 	m := make(map[int]int)
 	go loopWirte(m, lock)
-	go loopRead(m, lock)
-	//阻塞主线程，除非杀死进程，否则会一直阻塞下去。
-	var block = make(chan struct{})
-	<-block
-}
-
-// TestRwmutexLockRlockSequence测试先Lock后Rlock的顺序关系。
-// 注意，测试表明，"完全锁"操作(Lock)施加后，无法再施加”读取锁“操作（RLock），线程会阻塞。
-func TestRwmutexLockRlockSequence(t *testing.T) {
-	var lock = sync.RWMutex{}
-	lock.Lock()
-	println("locke ok! ")
-	lock.RLock() //注意，阻塞在此处，等待Unlock。
-	println("Rlock ok! ")
-	lock.RUnlock()
-	println("RUnlock ok! ")
-	lock.Unlock()
-	println("Unlock ok! ")
-}
-
-// TestRwmutexRlockLockSequence测试先Lock后Rlock的顺序关系。
-// 注意，测试表明，"读取锁"操作(RLock)施加后，无法再施加”完全锁“操作（Lock），线程会阻塞。
-func TestRwmutexRlockLockSequence(t *testing.T) {
-	var lock = sync.RWMutex{}
-
-	lock.RLock()
-	println("Rlock ok! ")
-	lock.Lock()
-	println("locke ok! ") //注意，阻塞在此处，等待RUnlock。
-	lock.RUnlock()
-	println("RUnlock ok! ")
-	lock.Unlock()
-	println("Unlock ok! ")
-}
-
-// TestRwmutexRlockRLockSequence测试先RLock后，再次RLock的加锁顺序关系。
-// 注意，测试表明，"读取锁"操作(RLock)施加后，可以再次施加”读取锁“操作（RLock），线程不会阻塞。
-func TestRwmutexRlockRLockSequence(t *testing.T) {
-	var lock = sync.RWMutex{}
-
-	lock.RLock()
-	println("Rlock ok! ")
-	lock.RLock()
-	println("Rlock again ok ! ")
-	lock.RUnlock()
-	println("RUnlock ok! ")
-	lock.RUnlock()
-	println("RUnlock ok again! ")
-}
-
-// TestMakeMapSafeAndGoodReadUsingRWMutex 利用RWMutex的RLock可以多次施加不阻塞特性，
-// 提高了一个写操作线程，多个读操作线程的性能。
-func TestMakeMapSafeAndGoodReadUsingRWMutex(t *testing.T) {
-	var loopWirte = func(m map[int]int, lock *sync.RWMutex) {
-		for n := 0; n < 100000; n++ {
-			for i := 0; i < 100; i++ {
-				lock.Lock()
-				m[i] = i
-				lock.Unlock()
-			}
-		}
-
-	}
-	var loopRead = func(m map[int]int, lock *sync.RWMutex) {
-		for n := 0; n < 100000; n++ {
-			lock.RLock()
-			for k, v := range m { // 读取map内容
-				println(k, "-", v)
-			}
-			lock.RUnlock()
-		}
-	}
-	lock := &sync.RWMutex{}
-	m := make(map[int]int)
-	go loopWirte(m, lock)
-	go loopRead(m, lock)
-	go loopRead(m, lock)
 	go loopRead(m, lock)
 	//阻塞主线程，除非杀死进程，否则会一直阻塞下去。
 	var block = make(chan struct{})
