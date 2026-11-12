@@ -45,10 +45,10 @@ func TestCaptureVariable1ByClosure2(t *testing.T) {
 		defer func() {
 			println("CreateDoublerAndGetter函数已经退出")
 		}()
-		doubler = func() {
+		doubler = func() { //!!!闭包1
 			i = i * 2
 		}
-		getter = func() int {
+		getter = func() int { //!!!闭包2
 			return i
 		}
 		return doubler, getter //!!!double和get两个标识符不过是内存中代码段的地址，是闭包函数的入口地址
@@ -273,7 +273,7 @@ func TestClosureUseCase4(t *testing.T) {
 }
 
 // ////////////////////////////////////////////////////////////////////////////
-// !!!闭包用途5：通过暴露的闭包函数控（不可见的）制线程的运行。
+// !!!闭包用途5：通过暴露的闭包函数控制（不可见的）线程的运行。
 // !!! 通过对外暴露的闭包函数控制隐藏的，在独立线程中执行的闭包函数的运行。
 // !!! 这是一个典型的“隐式对象（Iterator）”，next、cancel 和push三个闭包函数
 // !!! 共享相同的状态（入参s、Iterator_ch、Iterator_done、Iterator_canceld ）

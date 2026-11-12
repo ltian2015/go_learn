@@ -12,8 +12,11 @@ import (
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc" // Re-enable this import
+
+	// "go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp" // Remove this import
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc" // Re-enable this import
+	// "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp" // Remove this import
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -35,9 +38,10 @@ func initResource() *resource.Resource {
 }
 
 func initTracerProvider(ctx context.Context, res *resource.Resource) (*trace.TracerProvider, error) {
-	traceExporter, err := otlptracegrpc.New(ctx,
+	fmt.Println("Initializing Tracer Provider...")
+	traceExporter, err := otlptracegrpc.New(ctx, // ✅ 改回 gRPC 导出器
 		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint("localhost:4317"), // OTLP gRPC endpoint for traces
+		otlptracegrpc.WithEndpoint("host.docker.internal:4317"), // ✅ 尝试 host.docker.internal
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trace exporter: %w", err)
@@ -53,9 +57,10 @@ func initTracerProvider(ctx context.Context, res *resource.Resource) (*trace.Tra
 }
 
 func initLoggerProvider(ctx context.Context, res *resource.Resource) (*log.LoggerProvider, error) {
-	logExporter, err := otlploggrpc.New(ctx,
+	fmt.Println("Initializing Logger Provider...")
+	logExporter, err := otlploggrpc.New(ctx, // ✅ 改回 gRPC 导出器
 		otlploggrpc.WithInsecure(),
-		otlploggrpc.WithEndpoint("localhost:4317"), // OTLP gRPC endpoint for logs
+		otlploggrpc.WithEndpoint("host.docker.internal:4317"), // ✅ 尝试 host.docker.internal
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create log exporter: %w", err)
@@ -65,15 +70,16 @@ func initLoggerProvider(ctx context.Context, res *resource.Resource) (*log.Logge
 		log.WithProcessor(log.NewBatchProcessor(logExporter)),
 		log.WithResource(res),
 	)
-
-	//otel.SetLoggerProvider(lp)
+	// otel.SetLoggerProvider(lp) // This was commented out already
 	return lp, nil
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Received a request to handler.")
 	ctx := r.Context()
 	tr := otel.Tracer(serviceName)
 	ctx, span := tr.Start(ctx, "handler-request")
+	fmt.Printf("Span ID: %s, Trace ID: %s\n", span.SpanContext().SpanID().String(), span.SpanContext().TraceID().String())
 	defer span.End()
 
 	logger := slog.Default().With("trace_id", span.SpanContext().TraceID().String(), "span_id", span.SpanContext().SpanID().String())
@@ -82,12 +88,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		attribute.String("method", r.Method),
 		attribute.String("path", r.URL.Path),
 	)
+	fmt.Println("Logged info context.")
 
 	time.Sleep(50 * time.Millisecond) // Simulate some work
 
 	slog.WarnContext(ctx, "Processing request with a warning",
 		attribute.Int("processing_time_ms", 50),
 	)
+	fmt.Println("Logged warn context.")
 
 	fmt.Fprintf(w, "Hello, OpenTelemetry with Slog!", time.Now())
 }
@@ -106,6 +114,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer func() {
+		fmt.Println("Shutting down Tracer Provider...") // Added for debugging
 		if err := tp.Shutdown(ctx); err != nil {
 			slog.Default().Error("Error shutting down tracer provider", "error", err)
 		}
@@ -118,6 +127,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer func() {
+		fmt.Println("Shutting down Logger Provider...") // Added for debugging
 		if err := lp.Shutdown(ctx); err != nil {
 			slog.Default().Error("Error shutting down logger provider", "error", err)
 		}
@@ -125,6 +135,7 @@ func main() {
 
 	// 4. Set Slog to use OpenTelemetry Logger
 	slog.SetDefault(slog.New(otelslog.NewHandler("otel-slog-handler", otelslog.WithLoggerProvider(lp))))
+
 	// 5. Start HTTP Server
 	http.HandleFunc("/", handler)
 	port := ":8080"
@@ -138,7 +149,7 @@ func main() {
 	}()
 
 	// Wait for interrupt signal to gracefully shut down the server
-	<-ctx.Done()
+	<-ctx.Done() // 阻塞，直到接收到中断信号
 	slog.Default().Info("Shutting down server...")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -146,5 +157,10 @@ func main() {
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		slog.Default().Error("Server shutdown failed", "error", err)
 	}
+	fmt.Println("Server shutdown complete.") // Added for debugging
 	slog.Default().Info("Server gracefully stopped.")
+
+	// Add a small delay to ensure all buffered data is flushed before main exits
+	// This is a last resort for debugging, not for production
+	time.Sleep(2 * time.Second) // 增加一个短延迟，确保数据有时间发出
 }

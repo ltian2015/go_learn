@@ -1,25 +1,25 @@
-    receivers:
-      otlp:
-        protocols:
-          grpc:
-          http:
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
 
-    exporters:
-      jaeger:
-        endpoint: jaeger-all-in-one:14250
-        tls:
-          insecure: true
-      logging:
-        loglevel: debug
+exporters:
+  otlp:
+    endpoint: jaeger-all-in-one:4317 # Jaeger 的 OTLP gRPC 端口
+    tls:
+      insecure: true
+  debug: # 将 logging 导出器改为 debug 导出器
+    verbosity: detailed # 保持 detailed 级别
 
-    service:
-      pipelines:
-        traces:
-          receivers: [otlp]
-          exporters: [logging, jaeger]
-        metrics:
-          receivers: [otlp]
-          exporters: [logging]
-        logs:
-          receivers: [otlp]
-          exporters: [logging]
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlp, debug] # traces 导出到 otlp (给 Jaeger) 和 debug
+    metrics:
+      receivers: [otlp]
+      exporters: [otlp, debug] # metrics 导出到 otlp (给 Jaeger) 和 debug
+    logs:
+      receivers: [otlp]
+      exporters: [otlp, debug] # logs 导出到 otlp (给 Jaeger) 和 debug
